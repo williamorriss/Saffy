@@ -1,0 +1,10 @@
+# wrangler.toml
+name = "knowle"
+compatibility_date = "2024-01-01"
+
+[assets]
+directory = "./dist"
+
+[vars]
+AUTH = "auth.bath.ac.uk"
+TESTKEY = "d25e06ab1e2a26f8e0b1989fab7e78a21f4e4484e9d7ecab289dcc26a53e38ce" # only for dev
