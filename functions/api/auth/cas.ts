@@ -1,27 +1,25 @@
 import { XMLParser } from 'fast-xml-parser';
 import {SignJWT} from 'jose';
+import type { Env ,User } from '../../../types'
+import {EventContext} from '@cloudflare/workers-types';
 
-
-type User = {
-    username: string;
-};
-
-export async function onRequest(context) {
-    console.log("CAS callback");
-    // CAS redirect
+export async function onRequest(context: EventContext<Env, never, never>): Promise<Response> {
     const { request, env } = context;
     const url = new URL(request.url);
-    const ticket =  url.searchParams.get("ticket");
-    const service = url.origin + "/api/cas";
+    const ticket =  url.searchParams.get('ticket');
+    if (!ticket) {
+        throw new Error('Could not find ticket');
+    }
+
+    const service = url.origin + '/api/auth/cas';
 
 
     const casValidate = new URL(`https://${env.AUTH}/serviceValidate`);
-    casValidate.searchParams.append("service", service);
-    casValidate.searchParams.append("ticket", ticket);
-
+    casValidate.searchParams.append('service', service);
+    casValidate.searchParams.append('ticket', ticket);
 
     const username = await fetch(casValidate, {
-            method: "GET",
+            method: 'GET',
         }).then(parseXMLResponse);
 
 
@@ -36,12 +34,10 @@ export async function onRequest(context) {
             .setExpirationTime('2h')
             .sign(secretKey);
 
-        console.log("set token", token);
-
         return new Response(null, {
             status: 301,
             headers: {
-                'Location': url.origin,
+                'Location': url.origin + '?auth=true',
                 'Set-Cookie': `auth_token=${token}; HttpOnly; Path=/; Max-Age=7200; SameSite=Strict`,
                 'Content-Type': 'application/json'
             }
@@ -57,16 +53,13 @@ async function parseXMLResponse(response: Response) : Promise<string | null> {
         const parser = new XMLParser();
         const xmlResponse = parser.parse(await response.text());
 
-        if ("cas:authenticationSuccess" in xmlResponse["cas:serviceResponse"]) {
-            return xmlResponse["cas:serviceResponse"]["cas:authenticationSuccess"]["cas:user"];
+        if ('cas:authenticationSuccess' in xmlResponse['cas:serviceResponse']) {
+            return xmlResponse['cas:serviceResponse']['cas:authenticationSuccess']['cas:user'];
         }
         return null;
 
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return null;
     }
-
-
-
 }
