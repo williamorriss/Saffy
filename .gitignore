@@ -82,7 +82,7 @@ $RECYCLE.BIN/
 *.pid
 *.pid.lock
 
-
+*.DS_Store
 
 # Environment & Config
 .env
