@@ -1,91 +1,95 @@
-logs
-*.log
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+.cargo/
+.rustc_info.json
+rusty-tags.vi
+rusty-tags.emacs
+*.so
+*.dylib
+*.dll
+*.exe
+*.rlib
+*.a
+*.lib
+.cargo-ok
+
+# React/Node.js
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-larna-debug.log*
-
-pids
-*.pid
-*.seed
-*.pid.lock
-
-dist/
-dist-ssr/
-*.tsbuildinfo
-.next/
-.nuxt/
+.pnpm-store/
+.npm/
+.yarn/
 .cache/
-public/_worker.js
-_build/
-.out/
-.build/
-.output/
 
-node_modules/
-jspm_packages/
+# React build outputs
+build/
+dist/
+.next/
+out/
+.nuxt/
+.vite/
+.turbo/
 
-.npm
-
-.eslintcache
-
-.stylelintcache
-
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-.node_repl_history
-
-*.tgz
-
-.yarn-integrity
-
-.env
-.env.local
-.env.*.local
-.env.production
-.env.development
-
-.vercel
-
-.wrangler/
-.dev.vars
-.r2.dev.vars
-
+# IDEs
 .vscode/*
 !.vscode/extensions.json
-.vscode/settings.json
+!.vscode/settings.json
 .vscode/launch.json
-
+.vscode/tasks.json
 .idea/
 *.iml
 *.iws
 *.ipr
-
-.history/
+.fleet/
+.run/
+.zed/
+*.swp
+*.swo
+*~.nib
+local.properties
+.settings/
+.loadpath
+.externalToolBuilders/
+.cproject
+.project
 .sublime-project
 .sublime-workspace
 
+# OS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
+.AppleDouble
+.LSOverride
 ehthumbs.db
 Thumbs.db
 desktop.ini
-
 $RECYCLE.BIN/
-
 .directory
-
-*.tmp
-*.temp
 *~
+.fuse_hidden*
+.nfs*
 
+# Logs
+*.log
+*.pid
+*.pid.lock
+
+# Environment & Config
+.env
+.env.*
+!.env.example
+config.toml
+!config.example.toml
+
+# Secrets/Keys
 *.pem
 *.key
 *.crt
@@ -98,44 +102,67 @@ $RECYCLE.BIN/
 *.crl
 *.der
 *.csr
-
 secrets.json
 config.json
 credentials.json
 firebase-key.json
 service-account.json
 
-functions/_assets/
-functions/_worker.js
-functions/_worker.js.map
-functions/_rsc/
-
-*.tsbuildinfo
-
-coverage/
-.nyc_output/
-
-debug/
-*.debug
-
-.netlify
-
-hugo_stats.json
-
-*.db
-*.sqlite
-*.sqlite3
-
+# Temp
+*.tmp
+*.temp
+*~
 *.bak
 *.backup
 *.old
-
 *.sys
 *.dmp
 
-Thumbs.db
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+postgres-data/
+redis-data/
+mongodb-data/
+data/
+volumes/
 
+# Build outputs
 _build/
 _public/
+public/_worker.js
+.out/
+.build/
+.output/
 temp/
 uploads/
+debug/
+
+# Coverage & Testing
+coverage/
+.nyc_output/
+**/debug/
+**/target/debug/
+**/target/release/
+**/target/*/deps/
+.jest-cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Docker
+docker-compose.override.yml
+.docker/
+*-data/
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Misc
+*.tgz
+*.tsbuildinfo
+.node_repl_history
+.history/

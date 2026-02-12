@@ -1,0 +1,57 @@
+mod login;
+mod logout;
+mod cas;
+
+use axum::{Router, Json, response::{IntoResponse, Response}};
+use axum::routing::{any};
+use serde::{Serialize, Deserialize};
+use http::{request::Parts, StatusCode};
+use tower_sessions::Session;
+use crate::AppState;
+use crate::utils::ResultTrace;
+
+pub fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/auth/login", any(login::on_request_get))
+        .route("/auth/cas", any(cas::on_request_get))
+        .route("/auth/logout", any(logout::on_request_post))
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct AuthenticatedUser(pub User);
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct User {
+    pub(crate) username: String,
+}
+
+impl IntoResponse for AuthenticatedUser {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
+}
+
+impl<S> axum::extract::FromRequestParts<S> for AuthenticatedUser
+where
+    S: Send + Sync,
+{
+    type Rejection = Response;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let session = Session::from_request_parts(parts, state)
+            .await
+            .map_err(|_| (StatusCode::UNAUTHORIZED).into_response())?;
+
+        let username = session
+            .get::<String>("username")
+            .await
+            .server_err("Failed to get session")
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to get session").into_response())?
+            .ok_or_else(|| {
+                tracing::warn!("No username found for session");
+                StatusCode::UNAUTHORIZED.into_response()
+            })?;
+
+        Ok(AuthenticatedUser(User {username}))
+    }
+}
