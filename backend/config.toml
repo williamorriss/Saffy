@@ -10,3 +10,6 @@ origin = "https://auth.bath.ac.uk"
 
 [frontend]
 dist = "/Users/bill/IdeaProjects/knowle/frontend/dist"
+
+[database]
+max_connections = 5
