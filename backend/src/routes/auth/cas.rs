@@ -13,7 +13,7 @@ use crate::AppState;
 use axum::extract::State;
 use crate::config::Config;
 use crate::utils::ResultTrace;
-use axum::http::Uri;
+use sqlx::{query_scalar, PgPool};
 
 #[derive(Debug, Deserialize)]
 struct AuthenticationFailure {
@@ -47,18 +47,36 @@ pub async fn on_request_get(Query(params): Query<HashMap<String, String>>, sessi
     tracing::info!("Executing api/auth/cas endpoint");
     let xml = get_cas_response(&params, &state.config).await?;
     let username = parse_xml_response(&xml)?;
-    session.insert("username", username)
+    let id = match get_user_id(&username, &state.db).await {
+        Ok(id) => id,
+        Err(err) => {match err {
+            sqlx::Error::RowNotFound => new_user_id(&username, &state.db).await.server_err("Could not make new user")?,
+            _ => Err(err).server_err("Critical db error whilst getting userID")?
+        }}
+    };
+
+    session.insert("id", id)
         .await
-        .server_err("Failed to insert username into session")?;
+        .server_err("Failed to insert userID into session")?;
 
     session.save()
         .await
         .server_err("Failed to save session")?;
 
     Ok(Redirect::to("/?auth=true"))
-
 }
 
+async fn new_user_id(username: &str, db: &PgPool) -> Result<i32, sqlx::Error> {
+    query_scalar!("INSERT INTO users(username) VALUES($1) RETURNING id", username)
+        .fetch_one(db)
+        .await
+}
+
+async fn get_user_id(username: &str, db: &PgPool) -> Result<i32, sqlx::Error> {
+    query_scalar!("SELECT id FROM users WHERE username = $1", username)
+        .fetch_one(db)
+        .await
+}
 fn parse_xml_response(body: &str) -> Result<String, StatusCode> {
    Ok(from_str::<CasServiceResponse>(body)
        .map_err(|_| {

@@ -1,3 +1,4 @@
+pub mod issues;
 
 use serde::{Serialize, Deserialize};
 

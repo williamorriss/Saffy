@@ -22,7 +22,7 @@ pub(crate) struct AuthenticatedUser(pub User);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct User {
-    pub(crate) username: String,
+    pub(crate) id: i32,
 }
 
 impl IntoResponse for AuthenticatedUser {
@@ -42,8 +42,8 @@ where
             .await
             .map_err(|_| (StatusCode::UNAUTHORIZED).into_response())?;
 
-        let username = session
-            .get::<String>("username")
+        let id = session
+            .get::<i32>("id")
             .await
             .server_err("Failed to get session")
             .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to get session").into_response())?
@@ -52,6 +52,6 @@ where
                 StatusCode::UNAUTHORIZED.into_response()
             })?;
 
-        Ok(AuthenticatedUser(User {username}))
+        Ok(AuthenticatedUser(User { id }))
     }
 }
