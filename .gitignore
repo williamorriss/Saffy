@@ -82,6 +82,8 @@ $RECYCLE.BIN/
 *.pid
 *.pid.lock
 
+
+
 # Environment & Config
 .env
 .env.*
