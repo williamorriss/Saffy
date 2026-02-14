@@ -24,6 +24,8 @@ use tracing_subscriber::EnvFilter;
 use crate::config::{get_config, get_db_connection, Config};
 use crate::utils::ResultTrace;
 
+pub use config::RUST_TYPES;
+
 #[derive(Debug, Clone)]
 pub struct AppState {
     config: Config,

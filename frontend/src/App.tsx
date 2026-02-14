@@ -1,24 +1,27 @@
 import "./App.css";
-import type { Username } from "../types";
 import { z } from "zod";
-import { IssueResponse } from "../schemas.ts";
+import type { User, Issue } from "@rtypes";
+import { UserSchema, IssueSchema } from "@schemas";
 import { useState, useEffect, type JSX } from "react";
 import { ReportForm } from "./components/reportForm.tsx";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
+  const [user, setUser] = useState<User|null>(null);
   const params = new URLSearchParams(window.location.search);
 
   useEffect(() => {
     async function getUsername(): Promise<void> {
       try {
-        const userData: Username = await fetch("api/users/me", {
+        const result = UserSchema.safeParse(await fetch("api/users/me", {
           method: "GET",
-        }).then((response) => response.json());
+        }).then((response) => response.json()));
 
-        setUsername(userData?.username as string);
-        setLoggedIn(true);
+        if (result.success) {
+          setUser(result?.data);
+          setLoggedIn(true);
+        }
+
       } catch (error) {
         console.error(error);
       }
@@ -32,7 +35,7 @@ function App() {
     }
   });
 
-  return loggedIn ? loggedInHomePage(username) : homePage();
+  return loggedIn ? loggedInHomePage(user) : homePage();
 }
 
 function homePage(): JSX.Element {
@@ -46,13 +49,12 @@ function homePage(): JSX.Element {
 }
 
 function GetIssuesButton(): JSX.Element {
-  type Issue = z.infer<typeof IssueResponse>;
   const [issues, setIssues] = useState<Issue[] | null>(null);
 
   const getIssues = async () => {
     try {
       const { success, data, error } = z
-        .array(IssueResponse)
+        .array(IssueSchema)
         .safeParse(
           await fetch("/api/issues").then((response) => response.json()),
         );
@@ -73,10 +75,10 @@ function GetIssuesButton(): JSX.Element {
   return (
     <>
       <button onClick={getIssues}>Get </button>
-      {issues?.map(({ id, issue_description }) => (
+      {issues?.map(({ id, description }) => (
         <p>
           <strong>
-            IssueID: {id}, Desc: {issue_description}
+            IssueID: {id}, Desc: {description}
           </strong>
           {"\n"}
         </p>
@@ -85,8 +87,8 @@ function GetIssuesButton(): JSX.Element {
   );
 }
 
-function loggedInHomePage(username: string | null): JSX.Element {
-  const displayName = username ?? "Unknown";
+function loggedInHomePage(user: User | null): JSX.Element {
+  const displayName = user?.username ?? "Unknown";
   return (
     <>
       Hello {displayName}
