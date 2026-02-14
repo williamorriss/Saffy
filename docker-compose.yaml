@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16
+    container_name: myapp-db
+    environment:
+      POSTGRES_DB: knowleDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: myapp-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:changeme@db:5432/mydb
+      RUST_LOG: debug
+      RUST_BACKTRACE: 1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/Cargo.toml:/app/Cargo.toml
+      - ./backend/Cargo.lock:/app/Cargo.lock
+      - /app/target
+      # Don't mount target/ - keep in container for better performance
+    restart: unless-stopped
+    # Optional: for hot reload during dev
+    # command: cargo watch -x run
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: myapp-network
