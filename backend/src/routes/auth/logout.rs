@@ -1,11 +1,10 @@
 use axum::extract::State;
 use tower_sessions::Session;
-use http::{StatusCode};
+use http::StatusCode;
 use axum::response::Redirect;
-use auth::AuthenticatedUser;
-use crate::AppState;
-use crate::routes::auth;
+use crate::routes::AuthenticatedUser;
 use crate::utils::ResultTrace;
+use crate::AppState;
 
 pub async fn on_request_post(AuthenticatedUser(_): AuthenticatedUser, session: Session, State(state): State<AppState>) -> Result<Redirect, StatusCode> {
     tracing::info!("Executing api/auth/logout endpoint");

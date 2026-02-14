@@ -6,6 +6,8 @@ use anyhow::Result;
 use dotenv::{dotenv,var};
 use sqlx::postgres::{PgPoolOptions, PgPool};
 
+pub const RUST_TYPES: &str = "../../frontend/src/types/rust/";
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub server: ServerConfig,

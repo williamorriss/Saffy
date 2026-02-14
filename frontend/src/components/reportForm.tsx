@@ -1,29 +1,27 @@
-import { IssueForm } from "../../schemas.ts";
+import { CreateIssueSchema } from "@schemas";
 import type { SubmitEvent } from "react";
 
-/**
- * Component to take input to create a new issue
- * @constructor
- */
 export function ReportForm() {
   const post = async (form: SubmitEvent<HTMLFormElement>) => {
-    form.preventDefault(); // prevents parameters being passed in url
+    form.preventDefault();
     const formData = new FormData(form.currentTarget);
 
-    const result = IssueForm.safeParse({
-      latitude: formData.get("latitude"), // This is just for test, better solution for location is needed in the future
-      longitude: formData.get("longitude"),
-      level: formData.get("level"),
+    const result = CreateIssueSchema.safeParse({
       description: formData.get("description"),
+      locationId: formData.get("locationId"),
     });
 
     if (!result.success) {
-      alert(result.error.issues[0].message); // Will implement better error handling later
+      console.error(result.error);
+      alert(result.error.issues[0].message);
       return;
     }
 
     const response = await fetch("/api/issues", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(result.data),
     });
 
@@ -36,18 +34,19 @@ export function ReportForm() {
     <>
       <form onSubmit={post}>
         <input name="description" type="text" />
-        <input
-          name="latitude"
-          type="number"
-          step="any"
-          placeholder="Latitude"
-        />
-        <input
-          name="longitude"
-          type="number"
-          step="any"
-          placeholder="Longitude"
-        />
+        <input name="locationId" type="number" step="any" placeholder="location_id" />
+        {/*<input*/}
+        {/*  name="latitude"*/}
+        {/*  type="number"*/}
+        {/*  step="any"*/}
+        {/*  placeholder="Latitude"*/}
+        {/*/>*/}
+        {/*<input*/}
+        {/*  name="longitude"*/}
+        {/*  type="number"*/}
+        {/*  step="any"*/}
+        {/*  placeholder="Longitude"*/}
+        {/*/>*/}
         <button type="submit">Search</button>
       </form>
     </>

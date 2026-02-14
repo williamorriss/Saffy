@@ -105,11 +105,11 @@ async fn get_cas_response(params: &HashMap<String, String>, config: &Config) -> 
         .append_pair("service", cas_callback.as_str())
         .append_pair("ticket", ticket);
 
-    Ok(client.get(cas_url)
+    client.get(cas_url)
         .send()
         .await
         .map_err(|_| StatusCode::BAD_GATEWAY)?
         .text()
         .await
-        .server_err("Failed to get cas response")?)
+        .server_err("Failed to get cas response")
 }
