@@ -5,7 +5,7 @@ use ts_rs::TS;
 
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = crate::RUST_TYPES, rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub struct Issue {
     pub id: i32,
     pub description: Option<String>,
@@ -16,7 +16,7 @@ pub struct Issue {
 
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = crate::RUST_TYPES, rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub struct Location {
     pub id: i32,
     pub latitude: f32,
@@ -27,7 +27,7 @@ pub struct Location {
 
 #[derive(Debug, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export, export_to = crate::RUST_TYPES, rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
 pub struct CreateIssue {
     pub description: Option<String>,
     pub location_id: i32,

@@ -41,7 +41,7 @@ function App() {
 function homePage(): JSX.Element {
   return (
     <>
-      <button onClick={() => (window.location.href = "/auth/login")}>
+      <button onClick={() => (window.location.href = `/auth/login?redirect=${window.location.origin}`)}>
         Login
       </button>
     </>

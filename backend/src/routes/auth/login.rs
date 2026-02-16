@@ -1,19 +1,26 @@
-use axum::extract::State;
+use std::collections::HashMap;
+use axum::extract::Query;
 use axum::response::Redirect;
 use http::StatusCode;
-use crate::AppState;
+use url::Url;
+use crate::{AppState, ORIGIN};
+use crate::routes::auth::CAS_ORIGIN;
 use crate::utils::ResultTrace;
+use uuid;
+use axum::extract::State;
 
-pub async fn on_request_get(State(state): State<AppState>) -> Result<Redirect, StatusCode> {
+
+#[axum::debug_handler]
+pub async fn on_request_get(Query(query): Query<HashMap<String, String>>, State(state): State<AppState>) -> Result<Redirect, StatusCode> {
     tracing::info!("Executing api/auth/login endpoint");
-    let cas_callback = state.config.server.origin.join("auth/cas")
-        .server_err("Failed to build cas callback")?;
-    
-    let mut cas_url = state.config.cas.origin.join("login")
-        .server_err("Failed to build cas url")?;
-    
-    cas_url.query_pairs_mut()
-        .append_pair("service", cas_callback.as_str());
-        
+    let redirect = Url::parse(&query.get("redirect").ok_or_else(|| StatusCode::BAD_REQUEST)?).server_err("Could not parse redirect URL")?;
+    let auth_id = uuid::Uuid::new_v4();
+
+    let cas_url = Url::parse_with_params(
+        &format!("{}/login",CAS_ORIGIN),
+        &[("service", format!("{}/auth/cas/{}", ORIGIN, auth_id))],
+    ).server_err("Failed to create cas login url")?;
+
+    state.auth_cache.insert(auth_id, redirect).await;
     Ok(Redirect::permanent(cas_url.as_str()))
 }
