@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "gen-types" : "cd ../backend && cargo test && cp -r bindings/* ../frontend/src/types/rust",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext ts,tsx,mjs,js,jsx,mdx --report-unused-disable-directives",
