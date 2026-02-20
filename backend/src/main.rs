@@ -40,10 +40,12 @@ async fn make_db_connection() -> anyhow::Result<PgPool> {
 fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
     use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
     use tower_http::{
-        cors::{Any, CorsLayer},
+        cors::CorsLayer,
         services::{ServeDir, ServeFile},
         trace::TraceLayer,
     };
+    use http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE, ACCEPT};
+    use http::Method;
 
     let auth_cache = moka::future::Cache::builder()
         .time_to_live(std::time::Duration::from_secs(600))
@@ -62,19 +64,20 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
     tracing::debug!("Cors allow origin {:?}", dev_origin);
 
     let cors = CorsLayer::new()
-        .allow_origin(backend_origin)
-        .allow_origin(dev_origin)
-        .allow_methods(Any);
+        .allow_origin([backend_origin, dev_origin])
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE, COOKIE, ACCEPT])
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS])
+        .allow_credentials(true);
 
     let (router, api) = OpenApiRouter::with_openapi(backend::ApiDoc::openapi())
         .layer(TraceLayer::new_for_http())
-        .layer(cors)
         .merge(backend::auth::routes())
         .nest("/api", backend::reports::routes())
         .layer(session_layer)
         .fallback_service(
             ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")))
         .with_state(backend::AppState {db: db_pool.clone(), auth_cache: std::sync::Arc::new(auth_cache)})
+        .layer(cors)
         .split_for_parts();
 
     Ok(router.route("/openapi.json", axum::routing::get(move || async move { axum::Json(api) })))
