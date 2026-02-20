@@ -26,8 +26,8 @@ export default defineConfig({
   plugins: [react()],
     resolve: {
     alias: {
-      '@rtypes': path.resolve('./src/types/rust'),
-      '@schemas': path.resolve('./src/types/schemas'),
+      '@rtypes': path.resolve('./src/types'),
+      '@schemas': path.resolve('./src/schemas'),
     },
     },
 })

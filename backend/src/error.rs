@@ -14,7 +14,7 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
             AppError::NotFound(msg) => {
-                tracing::trace!("{} not found", msg);
+                tracing::debug!("{} not found", msg);
                 (StatusCode::NOT_FOUND, msg)
             },
             // AppError::Unauthorized => {
@@ -22,7 +22,7 @@ impl IntoResponse for AppError {
             //     (StatusCode::UNAUTHORIZED, "Unauthorized".to_string())
             // },
             AppError::BadRequest(msg) => {
-                tracing::trace!("BadRequest: {}", msg);
+                tracing::debug!("BadRequest: {}", msg);
                 (StatusCode::BAD_REQUEST, msg)
             },
             AppError::Internal(e) => {
@@ -31,7 +31,10 @@ impl IntoResponse for AppError {
             }
             AppError::DbError(e) => {
                 match e {
-                    sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "Item not found".to_string()),
+                    sqlx::Error::RowNotFound => {
+                        tracing::debug!("{} not found", e);
+                        (StatusCode::NOT_FOUND, "Item not found".to_string())
+                    },
                     _ => {
                         tracing::error!("Database error: {:?}", e);
                         (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string())

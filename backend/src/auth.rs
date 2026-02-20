@@ -50,6 +50,8 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         use http::StatusCode;
 
+        tracing::debug!("Authenticating user");
+
         let session = TowerSession::from_request_parts(parts, state)
             .await
             .map_err(|_| StatusCode::UNAUTHORIZED.into_response())?;
@@ -59,7 +61,7 @@ where
             .await
             .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to get session").into_response())?
             .ok_or_else(|| {
-                tracing::warn!("No username found for session");
+                tracing::warn!("No id found for session");
                 StatusCode::UNAUTHORIZED.into_response()
             })?;
 
@@ -67,15 +69,16 @@ where
     }
 }
 
-
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .routes(routes!(login, logout, get_session, cas_callback))
+        .routes(routes!(logout, get_session))
+        .routes(routes!(login))
+        .routes(routes!(cas_callback))
 }
 
 #[utoipa::path(
-    post,
-    path = "/auth/session",
+    get,
+    path = "/auth/login",
     responses(
         (status = 303, description = "Redirect to CAS auth"),
         (status = BAD_REQUEST, description = "Malformed URL redirect"),
@@ -90,7 +93,7 @@ pub async fn login(
     Query(query): Query<HashMap<String, String>>,
     State(state): State<AppState>,
 ) -> Result<Redirect, AppError> {
-    tracing::info!("Executing POST /auth/session");
+    tracing::info!("Executing POST /auth/login");
 
     let redirect = Url::parse(
         query.get("redirect")
@@ -126,7 +129,7 @@ pub async fn logout(
 
 #[utoipa::path(
     get,
-    path = "/api/users",
+    path = "/auth/session",
     responses(
         (status = 200, description = "User", body = User),
         (status = NOT_FOUND, description = "User not found"),
@@ -137,7 +140,7 @@ pub async fn get_session(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
 ) -> Result<Json<User>, AppError> {
-    tracing::info!("Executing GET /api/users");
+    tracing::info!("Executing GET /auth/session");
     Ok(Json(get_user(session.id, &state.db).await.map_err(AppError::from)?))
 }
 
@@ -180,13 +183,13 @@ pub async fn cas_callback(
         Err(err) => Err(AppError::DbError(err))?,
     };
 
+    tracing::info!("Session ID: {}", id);
     session.insert("id", id).await?;
     session.save().await?;
 
     let redirect_origin = Url::parse_with_params(redirect_url.as_str(), &[("auth", "true")])?;
     Ok(Redirect::to(redirect_origin.as_str()))
 }
-
 
 fn parse_xml_response(body: &str) -> Result<String, AppError> {
     #[derive(Debug, Deserialize)]
@@ -218,8 +221,6 @@ fn parse_xml_response(body: &str) -> Result<String, AppError> {
             || Err(AppError::Internal(anyhow!("XML response parsed but not found"))),
             |xml| Err(AppError::BadRequest(xml.message))),
         |res| Ok(res.user))
-
-
 }
 
 async fn get_user(id: Uuid, db: &PgPool) -> Result<User, sqlx::Error> {
