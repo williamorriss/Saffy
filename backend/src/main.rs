@@ -1,60 +1,25 @@
-mod routes;
-mod models;
-
-mod utils;
-
-use axum::Router;
-use axum_server::tls_rustls::RustlsConfig;
-use http::HeaderValue;
-use tower_http::{
-    services::{ServeDir, ServeFile},
-    cors::{Any, CorsLayer},
-    trace::TraceLayer,
-};
-
-use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
-use std::fmt::Debug;
-
-use std::net::SocketAddr;
 use sqlx::PgPool;
-use sqlx::postgres::PgPoolOptions;
-use tracing_subscriber::EnvFilter;
-use std::sync::Arc;
-use moka::future::Cache;
-use url::Url;
-use uuid::Uuid;
-
-const PORT: u16 = 8000;
-const ADDRESS: &str = "127.0.0.1";
-
-const ORIGIN: &str = "https://localhost:8000";
-
-
-#[derive(Debug, Clone)]
-pub struct AppState {
-    db: PgPool,
-    auth_cache: Arc<Cache<Uuid, Url>>,
-}
+use utoipa::OpenApi;
+use utoipa_axum::router::OpenApiRouter;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv()?;
 
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
+    tracing_subscriber::fmt().with_env_filter(tracing_subscriber::EnvFilter::from_default_env()).init();
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .expect("Failed to initialize TLS certificate");
 
     let db_pool = make_db_connection().await?;
     let app = app(&db_pool)?;
-    tracing::trace!("Created router:\n{:#?}", app);
 
-    let tls_config = RustlsConfig::from_pem_file("cert.pem", "key.pem")
+    let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file("cert.pem", "key.pem")
         .await?;
 
-    let address = format!("{}:{}", ADDRESS, PORT).parse::<SocketAddr>()?;
+    let address = format!("{}:{}", backend::ADDRESS, backend::PORT).parse::<std::net::SocketAddr>()?;
 
-    println!("Serving on {}", ORIGIN);
+    println!("Serving on {}", backend::ORIGIN);
 
     axum_server::bind_rustls(address, tls_config)
         .serve(app.into_make_service())
@@ -66,14 +31,21 @@ async fn main() -> anyhow::Result<()> {
 async fn make_db_connection() -> anyhow::Result<PgPool> {
     let db_url = dotenvy::var("DATABASE_URL")?;
 
-    Ok(PgPoolOptions::new()
+    Ok(sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
         .connect(&db_url)
         .await?)
 }
 
-fn app(db_pool: &PgPool) -> anyhow::Result<Router> {
-    let auth_cache = Cache::builder()
+fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
+    use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
+    use tower_http::{
+        cors::{Any, CorsLayer},
+        services::{ServeDir, ServeFile},
+        trace::TraceLayer,
+    };
+
+    let auth_cache = moka::future::Cache::builder()
         .time_to_live(std::time::Duration::from_secs(600))
         .max_capacity(10_000)
         .build();
@@ -83,10 +55,10 @@ fn app(db_pool: &PgPool) -> anyhow::Result<Router> {
         .with_secure(true)
         .with_expiry(Expiry::OnInactivity(time::Duration::seconds(3600)));
 
-    let backend_origin = ORIGIN.parse::<HeaderValue>()?;
+    let backend_origin = backend::ORIGIN.parse::<http::HeaderValue>()?;
     tracing::debug!("Cors allow origin {:?}", backend_origin);
 
-    let dev_origin = "https://localhost:5173".parse::<HeaderValue>()?;
+    let dev_origin = "https://localhost:5173".parse::<http::HeaderValue>()?;
     tracing::debug!("Cors allow origin {:?}", dev_origin);
 
     let cors = CorsLayer::new()
@@ -94,12 +66,16 @@ fn app(db_pool: &PgPool) -> anyhow::Result<Router> {
         .allow_origin(dev_origin)
         .allow_methods(Any);
 
-    Ok(Router::new()
+    let (router, api) = OpenApiRouter::with_openapi(backend::ApiDoc::openapi())
         .layer(TraceLayer::new_for_http())
         .layer(cors)
-        .merge(routes::routes())
+        .merge(backend::auth::routes())
+        .nest("/api", backend::reports::routes())
         .layer(session_layer)
         .fallback_service(
             ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")))
-        .with_state(AppState {db: db_pool.clone(), auth_cache: Arc::new(auth_cache)}))
+        .with_state(backend::AppState {db: db_pool.clone(), auth_cache: std::sync::Arc::new(auth_cache)})
+        .split_for_parts();
+
+    Ok(router.route("/openapi.json", axum::routing::get(move || async move { axum::Json(api) })))
 }
