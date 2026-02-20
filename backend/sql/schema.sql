@@ -1,38 +1,36 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- Users table
 CREATE TABLE users (
-   id SERIAL PRIMARY KEY,
-   username TEXT NOT NULL UNIQUE,
-   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Locations table
 CREATE TABLE locations (
-   id SERIAL PRIMARY KEY,
-   latitude REAL NOT NULL,
-   longitude REAL NOT NULL,
-   level INTEGER NOT NULL,
-   description TEXT
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    latitude REAL,
+    longitude REAL,
+    building TEXT,
+    level INTEGER NOT NULL,
+    description TEXT
 );
 
 -- Issues table
 CREATE TABLE issues (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     description TEXT,
-    location_id INTEGER NOT NULL REFERENCES locations(id),
-    opened_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    closed_at TIMESTAMP
+    location_id UUID NOT NULL REFERENCES locations(id)
 );
 
 -- Reports table
 CREATE TABLE reports (
-     id SERIAL PRIMARY KEY,
-     issue_id INTEGER NOT NULL REFERENCES issues(id),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     issue_id UUID NOT NULL REFERENCES issues(id),
+     reporter UUID NOT NULL REFERENCES users(id),
      description TEXT,
-     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     closed_at TIMESTAMP
 );
 
--- Create indexes for foreign keys (good practice for performance)
 CREATE INDEX idx_issues_location_id ON issues(location_id);
 CREATE INDEX idx_reports_issue_id ON reports(issue_id);
