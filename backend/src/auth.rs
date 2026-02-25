@@ -136,7 +136,7 @@ pub async fn logout(
     )
 )]
 #[axum::debug_handler]
-pub async fn get_session(
+async fn get_session(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
 ) -> Result<Json<User>, AppError> {
@@ -158,7 +158,7 @@ pub async fn get_session(
     )
 )]
 #[axum::debug_handler]
-pub async fn cas_callback(
+async fn cas_callback(
     Path(state_id): Path<Uuid>,
     Query(query): Query<HashMap<String, String>>,
     session: TowerSession,
@@ -224,7 +224,7 @@ fn parse_xml_response(body: &str) -> Result<String, AppError> {
 }
 
 async fn get_user(id: Uuid, db: &PgPool) -> Result<User, sqlx::Error> {
-    let result = query!("SELECT id, username, created_at FROM users WHERE id = $1", id)
+    let result = query!(r#"SELECT id, username, created_at FROM users WHERE id = $1"#, id)
         .fetch_one(db)
         .await?;
 
@@ -260,13 +260,13 @@ async fn get_cas_response(auth_id: &Uuid, params: &HashMap<String, String>) -> R
 }
 
 async fn new_user_id(username: &str, db: &PgPool) -> Result<Uuid, sqlx::Error> {
-    query_scalar!("INSERT INTO users(username) VALUES($1) RETURNING id", username)
+    query_scalar!(r#"INSERT INTO users(username) VALUES($1) RETURNING id"#, username)
         .fetch_one(db)
         .await
 }
 
 async fn get_user_id(username: &str, db: &PgPool) -> Result<Uuid, sqlx::Error> {
-    query_scalar!("SELECT id FROM users WHERE username = $1", username)
+    query_scalar!(r#"SELECT id FROM users WHERE username = $1"#, username)
         .fetch_one(db)
         .await
 }
