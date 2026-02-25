@@ -2,8 +2,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@rtypes/*": ["src/types/rust/*"],
-      "@rtypes": ["src/types/rust"],
       "@schemas/*": ["src/types/schemas/*"],
       "@schemas": ["src/types/schemas"]
     },

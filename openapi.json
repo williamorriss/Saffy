@@ -15,13 +15,77 @@
   "paths": {},
   "components": {
     "schemas": {
+      "CreateIssue": {
+        "type": "object",
+        "required": [
+          "locationUuid"
+        ],
+        "properties": {
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationUuid": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CreateReport": {
+        "type": "object",
+        "required": [
+          "issueId",
+          "description"
+        ],
+        "properties": {
+          "issueId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "Report": {
         "type": "object",
         "required": [
           "id",
           "issueId",
           "reporter",
-          "openedAt"
+          "createdAt"
         ],
         "properties": {
           "id": {
@@ -42,7 +106,7 @@
               "null"
             ]
           },
-          "openedAt": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },

@@ -10,6 +10,23 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    CreateIssue: {
+      title?: string | null;
+      description?: string | null;
+      /** Format: uuid */
+      locationUuid: string;
+    };
+    CreateReport: {
+      /** Format: uuid */
+      issueId: string;
+      description: string;
+    };
+    Issue: {
+      /** Format: uuid */
+      id: string;
+      title?: string | null;
+      description?: string | null;
+    };
     Report: {
       /** Format: uuid */
       id: string;
@@ -19,7 +36,7 @@ export interface components {
       reporter: string;
       description?: string | null;
       /** Format: date-time */
-      openedAt: string;
+      createdAt: string;
       /** Format: date-time */
       closedAt?: string | null;
     };
