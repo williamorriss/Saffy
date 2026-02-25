@@ -72,7 +72,7 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
     let (router, api) = OpenApiRouter::with_openapi(backend::ApiDoc::openapi())
         .layer(TraceLayer::new_for_http())
         .merge(backend::auth::routes())
-        .nest("/api", backend::reports::routes())
+        .nest("/api", backend::issues::routes())
         .layer(session_layer)
         .fallback_service(
             ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")))

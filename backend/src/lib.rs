@@ -1,4 +1,4 @@
-pub mod reports;
+pub mod issues;
 pub mod auth;
 
 pub mod error;
@@ -7,7 +7,7 @@ pub use auth::AuthSession;
 pub use error::AppError;
 
 
-use reports::Report;
+use issues::{CreateIssue, Issue, CreateReport, Report};
 use auth::User;
 
 pub const PORT: u16 = 8000;
@@ -30,6 +30,6 @@ pub struct AppState {
         description = "knowle dev api",
         contact(name = "will", email = "wvam20@bath.ac.uk"),
     ),
-    components(schemas(User, Report)),
+    components(schemas(User, Report, Issue, CreateIssue, CreateReport)),
 )]
 pub struct ApiDoc;
