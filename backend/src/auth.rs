@@ -71,14 +71,15 @@ where
 
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .routes(routes!(logout, get_session))
+        .routes(routes!(logout))
         .routes(routes!(login))
         .routes(routes!(cas_callback))
+        .routes(routes!(get_session))
 }
 
 #[utoipa::path(
     get,
-    path = "/auth/login",
+    path = "/login",
     responses(
         (status = 303, description = "Redirect to CAS auth"),
         (status = BAD_REQUEST, description = "Malformed URL redirect"),
@@ -102,8 +103,8 @@ pub async fn login(
 
     let auth_id = Uuid::new_v4();
     let cas_url = Url::parse_with_params(
-        &format!("{}/login", CAS_ORIGIN),
-        &[("service", format!("{}/auth/cas/{}", ORIGIN, auth_id))],
+        &format!("{CAS_ORIGIN}/login"),
+        &[("service", format!("{ORIGIN}/auth/cas/{auth_id}"))],
     ).map_err(|e| AppError::Internal(e.into()))?;
 
     state.auth_cache.insert(auth_id, redirect).await;
@@ -111,8 +112,8 @@ pub async fn login(
 }
 
 #[utoipa::path(
-    delete,
-    path = "/auth/session",
+    get,
+    path = "/logout",
     responses(
         (status = 303, description = "Redirect to CAS logout"),
     )
@@ -124,12 +125,12 @@ pub async fn logout(
 ) -> Result<Redirect, AppError> {
     tracing::info!("Executing DELETE /auth/session");
     session.flush().await?;
-    Ok(Redirect::to(&format!("{}/logout", CAS_ORIGIN)))
+    Ok(Redirect::to(&format!("{CAS_ORIGIN}/logout")))
 }
 
 #[utoipa::path(
     get,
-    path = "/auth/session",
+    path = "/session",
     responses(
         (status = 200, description = "User", body = User),
         (status = NOT_FOUND, description = "User not found"),
@@ -146,7 +147,7 @@ async fn get_session(
 
 #[utoipa::path(
     get,
-    path = "/auth/cas/{auth_id}",
+    path = "/cas/{auth_id}",
     responses(
         (status = 301, description = "Redirect to redirect url"),
         (status = NOT_FOUND, description = "Auth ID not recognised"),
@@ -240,9 +241,9 @@ async fn get_cas_response(auth_id: &Uuid, params: &HashMap<String, String>) -> R
         .ok_or_else(|| AppError::BadRequest("Missing ticket".to_string()))?;
 
     let cas_url = Url::parse_with_params(
-        &format!("{}/serviceValidate", CAS_ORIGIN),
+        &format!("{CAS_ORIGIN}/serviceValidate"),
         &[
-            ("service", &format!("{}/auth/cas/{}", ORIGIN, auth_id)),
+            ("service", &format!("{ORIGIN}/auth/cas/{auth_id}")),
             ("ticket", ticket),
         ],
     )?;

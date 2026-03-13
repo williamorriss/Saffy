@@ -7,14 +7,15 @@ const AuthContext = createContext<AuthContextType | null>(null);
 interface AuthContextType {
     isLoggedIn: () => boolean;
     session: User | null;
-    retrieveSession: () => void;
-    deleteSession: () => void;
+    login: () => void;
+    getSession: () => void;
+    logout: () => void;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [session, setSession] = useState<User | null>(null);
-    const retrieveSession = async () => {
-        const { data, error } = await client.GET("/auth/session")
+    const getSession = async () => {
+        const { data, error } = await client.GET("/auth/session", {})
         if (!data) {
             throw new Error(error);
         }
@@ -22,13 +23,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     const isLoggedIn = () => session != null;
 
-    const deleteSession = async () => {
+    const login =
+        () => {location.href =`/auth/login?redirect=${location.origin}`;};
+
+    const logout = async () => {
         setSession(null);
-        await client.DELETE("/auth/session");
+        location.href =`/auth/logout?redirect=${location.origin}`;
     }
 
     return (
-    <AuthContext.Provider value={{ session, retrieveSession, deleteSession, isLoggedIn }}>
+    <AuthContext.Provider value={{ session, login, getSession, logout, isLoggedIn }}>
       {children}
     </AuthContext.Provider>
   );

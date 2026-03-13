@@ -9,9 +9,9 @@ import { AuthProvider } from "./AuthContext"
 createRoot(document.getElementById("root")!).render(
     <AuthProvider>
         <BrowserRouter>
-            <StrictMode> // double refresh
+            <StrictMode>
                 <App />
-            </StrictMode>,
+            </StrictMode>
         </BrowserRouter>
     </AuthProvider>
 );

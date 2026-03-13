@@ -1,1 +1,1 @@
-export { CreateReportSchema } from './reports';
+export { CreateIssueSchema } from './reports';
