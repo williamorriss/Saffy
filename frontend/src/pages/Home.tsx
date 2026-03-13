@@ -7,16 +7,9 @@ import { useAuth } from "../AuthContext";
 function useSession() {
     const { getSession } = useAuth();
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("auth") == "true") {
-            try {
-                getSession();
-                const url = new URL(window.location.toString());
-                url.searchParams.delete("auth");
-                window.history.replaceState({}, "", url.pathname + url.search);
-            } catch (error) {
-                alert(error);
-            }
+        const { error } = getSession();
+        if (error) {
+            alert(error.message);
         }
     }, []);
 }

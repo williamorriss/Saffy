@@ -17,14 +17,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getSession = async () => {
         const { data, error } = await client.GET("/auth/session", {})
         if (!data) {
-            throw new Error(error);
+           return {data : null, error}
         }
+        const params = new URLSearchParams(location.search);
+        if (params.get("auth") != "true") {
+            return { data : null, error : new Error("Auth redirect flag not set")};
+        }
+
         setSession(data);
+        const url = new URL(location.toString());
+        url.searchParams.delete("auth");
+        history.replaceState({}, "", url.pathname + url.search);
+
+        return { data, error : null };
     };
     const isLoggedIn = () => session != null;
 
-    const login =
-        () => {location.href =`/auth/login?redirect=${location.origin}`;};
+    const login = () => {
+        location.href =`/auth/login?redirect=${location.origin}`;
+    };
 
     const logout = async () => {
         setSession(null);
