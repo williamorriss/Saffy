@@ -58,13 +58,14 @@ pub struct Issue {
 
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .routes(routes!(post_issue, get_issues))
-        .routes(routes!(post_report, get_issue))
+        .routes(routes!(get_issues))
+        // .routes(routes!(post_report, get_issue))
+        .routes(routes!(post_issue))
 }
 
 #[utoipa::path(
     post,
-    path = "/api/issues",
+    path = "/issues",
     request_body = CreateIssue,
     responses(
         (status = 201, description = "New issue created"),
@@ -76,7 +77,8 @@ async fn post_issue(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
     Json(new_issue): Json<CreateIssue>) -> Result<StatusCode, AppError> {
-    tracing::info!("Creating new issue: {:?}", new_issue.description);
+    tracing::info!("Executing POST /api/issues");
+    tracing::info!("Creating new issue: {:?}", new_issue);
     let mut transaction = state.db.begin().await?;
     let issue_id = make_issue(&mut transaction, &new_issue).await?;
     let _report_uuid = make_initial_report(&mut transaction, session.id, issue_id, &new_issue).await?;
@@ -102,7 +104,7 @@ async fn make_initial_report(transaction: &mut Transaction<'_, Postgres>, user_u
 
 #[utoipa::path(
     get,
-    path = "/api/issues",
+    path = "/issues",
     responses(
         (status = 200, description = "All issues", body = Vec<Issue>),
         (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
@@ -110,6 +112,7 @@ async fn make_initial_report(transaction: &mut Transaction<'_, Postgres>, user_u
 )]
 #[axum::debug_handler]
 async fn get_issues(State(state): State<AppState>) -> Result<Json<Vec<Issue>>, AppError> {
+    tracing::info!("Executing GET /auth/issues");
     let issues = get_all_issues(&state.db).await?;
     Ok(Json(issues))
 }
@@ -138,7 +141,7 @@ async fn get_all_issues(db: &PgPool) -> Result<Vec<Issue>, sqlx::Error>  {
 
 #[utoipa::path(
     get,
-    path = "/api/issues/{id}",
+    path = "/issues/{id}",
     params(
         ("id" = Uuid, Path, description = "Issue uuid")
     ),
@@ -173,27 +176,28 @@ async fn get_all_reports(issue_id: Uuid, db: &PgPool) -> Result<Vec<Report>, sql
         })
 }
 
-#[utoipa::path(
-    post,
-    path = "/api/issues/{id}",
-    params(("id" = Uuid, Path, description = "Issue uuid")),
-    request_body = CreateReport,
-    responses(
-        (status = 201, description = "Created new report"),
-        (status = 500, description = "Failed to create new report")
-    ),
-)]
-#[axum::debug_handler]
-async fn post_report(AuthSession(session): AuthSession, State(state): State<AppState>, Path(issue_id): Path<Uuid>, Json(report): Json<CreateReport> ) -> Result<StatusCode, AppError> {
-    let report_id = create_report(issue_id, session.id, report, &state.db).await?;
-    tracing::debug!("Created report {:?}", report_id);
-    Ok(StatusCode::CREATED)
-}
-
-async fn create_report(issue_id: Uuid, reporter_id: Uuid, report: CreateReport, db: &PgPool) -> Result<Uuid, sqlx::Error> {
-    query_scalar!("INSERT INTO reports (issue_id, reporter_id, description) VALUES ($1, $2, $3) RETURNING id",
-        issue_id,
-        reporter_id,
-        report.description
-    ).fetch_one(db).await
-}
+// #[utoipa::path(
+//     post,
+//     path = "/issues/{id}",
+//     params(("id" = Uuid, Path, description = "Issue uuid")),
+//     request_body = CreateReport,
+//     responses(
+//         (status = 201, description = "Created new report"),
+//         (status = 500, description = "Failed to create new report")
+//     ),
+// )]
+// #[axum::debug_handler]
+// async fn post_report(AuthSession(session): AuthSession, State(state): State<AppState>, Path(issue_id): Path<Uuid>, Json(report): Json<CreateReport> ) -> Result<StatusCode, AppError> {
+//     tracing::info!("{}", format!("Executing POST /auth/issues/{issue_id}"));
+//     let report_id = create_report(issue_id, session.id, report, &state.db).await?;
+//     tracing::debug!("Created report {:?}", report_id);
+//     Ok(StatusCode::CREATED)
+// }
+//
+// async fn create_report(issue_id: Uuid, reporter_id: Uuid, report: CreateReport, db: &PgPool) -> Result<Uuid, sqlx::Error> {
+//     query_scalar!("INSERT INTO reports (issue_id, reporter_id, description) VALUES ($1, $2, $3) RETURNING id",
+//         issue_id,
+//         reporter_id,
+//         report.description
+//     ).fetch_one(db).await
+// }

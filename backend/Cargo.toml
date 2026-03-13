@@ -33,4 +33,4 @@ moka = { version = "0.12", features = ["future"] }
 uuid = { version = "1.21.0", features = ["v4", "serde"] }
 utoipa-axum = "0.2.0"
 utoipa = {  version = "5.4.0", features = ["chrono", "uuid", "preserve_order"] }
-utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+utoipauto = "0.2.0"

@@ -1,5 +1,7 @@
 import { z } from "zod";
-export const CreateReportSchema = z.object({
+import type { createIssue } from "./types";
+export const CreateIssueSchema = z.object({
+    title: z.string(),
     description: z.string().nullable(),
     locationId: z.coerce.number().int().positive(),
-});
+}) satisfies createIssue;

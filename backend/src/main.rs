@@ -70,15 +70,16 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
         .allow_credentials(true);
 
     let (router, api) = OpenApiRouter::with_openapi(backend::ApiDoc::openapi())
-        .layer(TraceLayer::new_for_http())
-        .merge(backend::auth::routes())
+        .nest("/auth", backend::auth::routes())
         .nest("/api", backend::issues::routes())
+        .split_for_parts();
+
+    Ok(router
+        .layer(TraceLayer::new_for_http())
+        .with_state(backend::AppState {db: db_pool.clone(), auth_cache: std::sync::Arc::new(auth_cache)})
         .layer(session_layer)
         .fallback_service(
             ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")))
-        .with_state(backend::AppState {db: db_pool.clone(), auth_cache: std::sync::Arc::new(auth_cache)})
         .layer(cors)
-        .split_for_parts();
-
-    Ok(router.route("/openapi.json", axum::routing::get(move || async move { axum::Json(api) })))
+        .route("/openapi.json", axum::routing::get(move || async move { axum::Json(api)})))
 }

@@ -5,10 +5,7 @@ pub mod error;
 
 pub use auth::AuthSession;
 pub use error::AppError;
-
-
-use issues::{CreateIssue, Issue, CreateReport, Report};
-use auth::User;
+use utoipauto::utoipauto;
 
 pub const PORT: u16 = 8000;
 pub const ADDRESS: &str = "127.0.0.1";
@@ -21,7 +18,7 @@ pub struct AppState {
     pub auth_cache: std::sync::Arc<moka::future::Cache<uuid::Uuid, url::Url>>,
 }
 
-
+#[utoipauto]
 #[derive(utoipa::OpenApi)]
 #[openapi(
     info(
@@ -30,6 +27,5 @@ pub struct AppState {
         description = "knowle dev api",
         contact(name = "will", email = "wvam20@bath.ac.uk"),
     ),
-    components(schemas(User, Report, Issue, CreateIssue, CreateReport)),
 )]
 pub struct ApiDoc;

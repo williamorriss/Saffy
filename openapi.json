@@ -12,7 +12,196 @@
     },
     "version": "-10.0.0"
   },
-  "paths": {},
+  "paths": {
+    "/cas/{auth_id}": {
+      "get": {
+        "tags": [
+          "crate::auth"
+        ],
+        "operationId": "cas_callback",
+        "parameters": [
+          {
+            "name": "auth_id",
+            "in": "path",
+            "description": "Issued ID upon entering the login endpoint",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "301": {
+            "description": "Redirect to redirect url"
+          },
+          "400": {
+            "description": "Malformed URL redirect"
+          },
+          "404": {
+            "description": "Auth ID not recognised"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/issues": {
+      "get": {
+        "tags": [
+          "crate::issues"
+        ],
+        "operationId": "get_issues",
+        "responses": {
+          "200": {
+            "description": "All issues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Issue"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Could not make new issue"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "crate::issues"
+        ],
+        "operationId": "post_issue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIssue"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "New issue created"
+          },
+          "500": {
+            "description": "Failed to create new issue"
+          }
+        }
+      }
+    },
+    "/issues/{id}": {
+      "get": {
+        "tags": [
+          "crate::issues"
+        ],
+        "operationId": "get_issue",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Issue uuid",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All reports for issue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Report"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Could not make new issue"
+          }
+        }
+      }
+    },
+    "/login": {
+      "get": {
+        "tags": [
+          "crate::auth"
+        ],
+        "operationId": "login",
+        "parameters": [
+          {
+            "name": "redirect",
+            "in": "query",
+            "description": "Url to redirect to after login",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Redirect to CAS auth"
+          },
+          "400": {
+            "description": "Malformed URL redirect"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/logout": {
+      "get": {
+        "tags": [
+          "crate::auth"
+        ],
+        "operationId": "logout",
+        "responses": {
+          "303": {
+            "description": "Redirect to CAS logout"
+          }
+        }
+      }
+    },
+    "/session": {
+      "get": {
+        "tags": [
+          "crate::auth"
+        ],
+        "operationId": "get_session",
+        "responses": {
+          "200": {
+            "description": "User",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    }
+  },
   "components": {
     "schemas": {
       "CreateIssue": {
@@ -70,6 +259,39 @@
               "string",
               "null"
             ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Location": {
+        "type": "object",
+        "required": [
+          "id",
+          "latitude",
+          "longitude",
+          "level"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "float"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "float"
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32"
           },
           "description": {
             "type": [

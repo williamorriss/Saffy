@@ -1,14 +1,16 @@
 import { type JSX, useEffect} from "react"
+import { useNavigate } from 'react-router-dom';
 import { IssueFeed } from "../components/IssueFeed"
 import { useAuth } from "../AuthContext";
 
+
 function useSession() {
-    const { retrieveSession } = useAuth();
+    const { getSession } = useAuth();
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (params.get("auth") == "true") {
             try {
-                retrieveSession();
+                getSession();
                 const url = new URL(window.location.toString());
                 url.searchParams.delete("auth");
                 window.history.replaceState({}, "", url.pathname + url.search);
@@ -20,9 +22,11 @@ function useSession() {
 }
 
 export function Home(): JSX.Element {
+    const navigate = useNavigate()
     useSession();
     return (
         <>
+            <button onClick={() => navigate("/new-issue")}>New Issue</button>
             <IssueFeed />
         </>
     );
