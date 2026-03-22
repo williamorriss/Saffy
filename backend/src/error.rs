@@ -1,5 +1,4 @@
 use axum::{response::{IntoResponse, Response}, http::StatusCode, Json};
-use serde::Deserialize;
 use serde_json::json;
 use crate::error::AppError::DbError;
 

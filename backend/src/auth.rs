@@ -71,7 +71,7 @@ pub fn routes() -> OpenApiRouter<AppState> {
 
 #[utoipa::path(
     get,
-    path = "/login",
+    path = "/auth/login",
     responses(
         (status = 303, description = "Redirect to CAS auth"),
         (status = BAD_REQUEST, description = "Malformed URL redirect"),
@@ -105,7 +105,7 @@ pub async fn login(
 
 #[utoipa::path(
     get,
-    path = "/logout",
+    path = "/auth/logout",
     responses(
         (status = 303, description = "Redirect to CAS logout"),
     )
@@ -122,7 +122,7 @@ pub async fn logout(
 
 #[utoipa::path(
     get,
-    path = "/session",
+    path = "/auth/session",
     responses(
         (status = 200, description = "User", body = User),
         (status = NOT_FOUND, description = "User not found"),
@@ -139,7 +139,7 @@ async fn get_session(
 
 #[utoipa::path(
     get,
-    path = "/cas/{auth_id}",
+    path = "/auth/cas/{auth_id}",
     responses(
         (status = 301, description = "Redirect to redirect url"),
         (status = NOT_FOUND, description = "Auth ID not recognised"),

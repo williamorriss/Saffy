@@ -13,46 +13,73 @@
     "version": "-10.0.0"
   },
   "paths": {
-    "/cas/{auth_id}": {
-      "get": {
-        "tags": [
-          "crate::auth"
-        ],
-        "operationId": "cas_callback",
-        "parameters": [
-          {
-            "name": "auth_id",
-            "in": "path",
-            "description": "Issued ID upon entering the login endpoint",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "301": {
-            "description": "Redirect to redirect url"
-          },
-          "400": {
-            "description": "Malformed URL redirect"
-          },
-          "404": {
-            "description": "Auth ID not recognised"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
-    "/issues": {
+    "/api/issues": {
       "get": {
         "tags": [
           "crate::issues"
         ],
         "operationId": "get_issues",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "showOpen",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "showClosed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "dateAfter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "dateBefore",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/IssueQueryOrder"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "All issues",
@@ -97,17 +124,17 @@
         }
       }
     },
-    "/issues/{id}": {
+    "/auth/cas/{auth_id}": {
       "get": {
         "tags": [
-          "crate::issues"
+          "crate::auth"
         ],
-        "operationId": "get_issue",
+        "operationId": "cas_callback",
         "parameters": [
           {
-            "name": "id",
+            "name": "auth_id",
             "in": "path",
-            "description": "Issue uuid",
+            "description": "Issued ID upon entering the login endpoint",
             "required": true,
             "schema": {
               "type": "string",
@@ -116,26 +143,22 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "All reports for issue",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Report"
-                  }
-                }
-              }
-            }
+          "301": {
+            "description": "Redirect to redirect url"
+          },
+          "400": {
+            "description": "Malformed URL redirect"
+          },
+          "404": {
+            "description": "Auth ID not recognised"
           },
           "500": {
-            "description": "Could not make new issue"
+            "description": "Internal server error"
           }
         }
       }
     },
-    "/login": {
+    "/auth/login": {
       "get": {
         "tags": [
           "crate::auth"
@@ -165,7 +188,7 @@
         }
       }
     },
-    "/logout": {
+    "/auth/logout": {
       "get": {
         "tags": [
           "crate::auth"
@@ -178,7 +201,7 @@
         }
       }
     },
-    "/session": {
+    "/auth/session": {
       "get": {
         "tags": [
           "crate::auth"
@@ -267,6 +290,15 @@
             ]
           }
         }
+      },
+      "IssueQueryOrder": {
+        "type": "string",
+        "enum": [
+          "OldestFirst",
+          "NewestFirst",
+          "Relevance",
+          "RecentlyUpdated"
+        ]
       },
       "Location": {
         "type": "object",

@@ -1,21 +1,46 @@
 import { type JSX, useState, useEffect } from "react";
 import type {Issue} from "../types/index";
 import { client } from "../App";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
-function setDefaultData(setIssues: (issues: Issue[]) => void) {
+const SearchSchema = z.object({search : z.string().default("")});
+
+type SearchProps = { setIssues: (issues: Issue[]) => void };
+
+function SearchBar ({ setIssues } : SearchProps)  {
+    const { register, watch, formState: {errors} } = useForm({
+        resolver: zodResolver(SearchSchema),
+    });
+
+    const search = watch("search", "");
+        const TIMEOUT: number = 250;
+
     useEffect(() => {
-        const fetchIssues = async () => {
-            const {data, error} = await client.GET("/api/issues");
+        if (errors.search) return;
 
+        const timeout = setTimeout(async () => {
+            const ordering = search === "" ? "NewestFirst" : "Relevance";
+            const {data} = await client.GET("/api/issues", {
+                params: {
+                    query : {search, ordering}
+                },
+            });
             if (data) {
                 setIssues(data);
-            } else {
-                setIssues([]);
             }
-        };
+        }, TIMEOUT);
 
-        fetchIssues();
-    }, []);
+        return () => clearTimeout(timeout);
+    }, [search, errors.search]);
+
+    return (
+        <form>
+            <input {...register("search")} placeholder="Searching...." />
+            <input type="submit" />
+        </form>
+    );
 }
 
 function issuePanel(issue: Issue): JSX.Element {
@@ -29,9 +54,6 @@ function issuePanel(issue: Issue): JSX.Element {
 
 export function IssueFeed() : JSX.Element {
     const [issues, setIssues] = useState<Issue[]>([])
-    setDefaultData(setIssues);
-
-    console.log(issues)
 
     if (issues.length === 0) {
         return <> No issues found.</>
@@ -39,6 +61,7 @@ export function IssueFeed() : JSX.Element {
 
     return (
         <>
+            <SearchBar setIssues={setIssues} />
             ISSUES:
             {issues?.map(issuePanel)}
         </>

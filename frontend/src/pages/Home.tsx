@@ -6,12 +6,7 @@ import { useAuth } from "../AuthContext";
 
 function useSession() {
     const { getSession } = useAuth();
-    useEffect(() => {
-        const { error } = getSession();
-        if (error) {
-            alert(error.message);
-        }
-    }, []);
+    useEffect(() => {getSession();}, []);
 }
 
 export function Home(): JSX.Element {
