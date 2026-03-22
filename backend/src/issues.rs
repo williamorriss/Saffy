@@ -1,12 +1,16 @@
+pub mod search;
+
+use search::IssueQuery;
+
 use axum::extract::{Path, State};
 use axum::Json;
 use sqlx::{query, query_scalar, PgPool, Postgres, Transaction};
 use crate::{AppState, AuthSession};
 use utoipa_axum::routes;
-
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 use http::StatusCode;
+use axum::extract::Query;
 use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 use crate::error::AppError;
@@ -55,6 +59,7 @@ pub struct Issue {
     pub title: Option<String>,
     pub description: Option<String>,
 }
+
 
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
@@ -111,32 +116,11 @@ async fn make_initial_report(transaction: &mut Transaction<'_, Postgres>, user_u
     ),
 )]
 #[axum::debug_handler]
-async fn get_issues(State(state): State<AppState>) -> Result<Json<Vec<Issue>>, AppError> {
+async fn get_issues(query: Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<Issue>>, AppError> {
     tracing::info!("Executing GET /auth/issues");
-    let issues = get_all_issues(&state.db).await?;
-    Ok(Json(issues))
-}
+    // filters not implemented yet
+    query.0.query(&state.db).await.map(Json)
 
-async fn get_all_issues(db: &PgPool) -> Result<Vec<Issue>, sqlx::Error>  {
-   query!(r#"
-        SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
-        LEFT JOIN (
-            SELECT issue_id, MIN(created_at) as earliest_report
-            FROM reports
-            GROUP BY issue_id
-        ) earliest_reports ON issues.id = earliest_reports.issue_id
-        ORDER BY earliest_reports.earliest_report DESC
-   "#).fetch_all(db)
-       .await
-       .map(|rows| {
-           rows.into_iter().map(|row| {
-               Issue {
-                   id: row.id,
-                   title: row.title,
-                   description: row.description,
-               }
-           }).collect()
-       })
 }
 
 #[utoipa::path(
@@ -175,6 +159,9 @@ async fn get_all_reports(issue_id: Uuid, db: &PgPool) -> Result<Vec<Report>, sql
             }).collect()
         })
 }
+
+
+
 
 // #[utoipa::path(
 //     post,

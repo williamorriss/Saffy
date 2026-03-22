@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT NOT NULL UNIQUE,
@@ -10,14 +12,28 @@ CREATE TABLE locations (
     longitude REAL,
     building TEXT,
     level INTEGER NOT NULL,
-    description TEXT
+    description TEXT,
+    search_vector tsvector
+        GENERATED ALWAYS AS (
+        to_tsvector('english',
+        coalesce(building, '')    || ' ' ||
+        coalesce(description, '')
+        )
+        ) STORED
 );
 
 CREATE TABLE issues (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT,
     description TEXT,
-    location_id UUID REFERENCES locations(id)
+    location_id UUID REFERENCES locations(id),
+    search_vector tsvector
+        GENERATED ALWAYS AS (
+        to_tsvector('english',
+        coalesce(title, '')       || ' ' ||
+        coalesce(description, '')
+        )
+        ) STORED
 );
 
 CREATE TABLE reports (
@@ -31,6 +47,14 @@ CREATE TABLE reports (
 
 CREATE INDEX idx_issues_location_id ON issues(location_id);
 CREATE INDEX idx_reports_issue_id ON reports(issue_id);
-
 CREATE INDEX idx_reports_issue_id_created_at
     ON reports(issue_id, created_at);
+
+-- vector indices
+CREATE INDEX issue_fts_idx    ON issues    USING GIN(search_vector);
+CREATE INDEX location_fts_idx ON locations USING GIN(search_vector);
+
+-- trgm indices
+CREATE INDEX issue_trgm_title ON issues    USING GIN(title       gin_trgm_ops);
+CREATE INDEX issue_trgm_desc  ON issues    USING GIN(description gin_trgm_ops);
+CREATE INDEX loc_trgm_building ON locations USING GIN(building   gin_trgm_ops);
