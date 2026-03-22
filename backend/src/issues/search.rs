@@ -1,9 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{query, PgPool, Postgres, QueryBuilder, Row};
-use sqlx::postgres::PgArguments;
-use sqlx::query::Query;
-use utoipa::ToSchema;
+use sqlx::{query, PgPool, Row};
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 use crate::AppError;
 use crate::issues::Issue;
@@ -32,7 +30,8 @@ impl TryFrom<String> for IssueQueryOrder {
 
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query, rename_all = "camelCase")]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 pub struct IssueQuery {
@@ -69,15 +68,16 @@ impl IssueQuery {
 
         match self.ordering {
             NewestFirst => self.newest(db).await,
-            OldestFirst => self.oldest(db).await,
-            RecentlyUpdated => self.recent(db).await,
+            // OldestFirst => self.oldest(db).await,
+            // RecentlyUpdated => self.recent(db).await,
             Relevance => self.relevance(db).await,
+            _ => todo!(),
         }
     }
 
-    async fn newest(&self) -> String {
+    async fn newest(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
         let show = self.show_clause("r");
-        format!(r"
+        let sql = format!(r"
             SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
             LEFT JOIN (
                 SELECT issue_id, closed_at, MIN(created_at) as earliest_report
@@ -86,23 +86,11 @@ impl IssueQuery {
             ) earliest_reports ON issues.id = earliest_reports.issue_id
             WHERE (r.earliest_report BETWEEN $1 AND $2) AND ({show})
             ORDER BY r.earliest_report DESC
-        ")
-    }
-
-    async fn oldest(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
-        let show = self.show_clause("r");
-        let sql = format!(r"
-            SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
-            LEFT JOIN (
-                SELECT issue_id, closed_at, MIN(created_at) as earliest_report
-                FROM reports
-                GROUP BY issue_id
-            ) earliest_reports ON issues.id = earliest_reports.issue_id
-            WHERE (r.earliest_report BETWEEN $1 AND $2) AND ({show})
-            ORDER BY r.earliest_report ASC
         ");
 
+
         query(&sql)
+            .bind(self.search.to_owned().unwrap_or("".to_string()))
             .bind(self.date_after)
             .bind(self.date_before)
             .fetch_all(db)
@@ -119,35 +107,65 @@ impl IssueQuery {
             .map_err(AppError::from)
     }
 
-    async fn recent<'q>(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
-        let show = self.show_clause("r");
-        let sql = format!(r"
-            SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
-            LEFT JOIN (
-                SELECT issue_id, closed_at, MIN(created_at) as earliest_report, MAX(created_at) as latest_report
-                FROM reports
-                GROUP BY issue_id
-            ) r ON issues.id = r.issue_id
-            WHERE (r.earliest_report BETWEEN $1 AND $2) AND ({show})
-            ORDER BY r.latest_report DESC
-        ");
+    // async fn oldest(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
+    //     let show = self.show_clause("r");
+    //     let sql = format!(r"
+    //         SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
+    //         LEFT JOIN (
+    //             SELECT issue_id, closed_at, MIN(created_at) as earliest_report
+    //             FROM reports
+    //             GROUP BY issue_id
+    //         ) earliest_reports ON issues.id = earliest_reports.issue_id
+    //         WHERE (r.earliest_report BETWEEN $1 AND $2) AND ({show})
+    //         ORDER BY r.earliest_report ASC
+    //     ");
+    //
+    //     query(&sql)
+    //         .bind(self.date_after)
+    //         .bind(self.date_before)
+    //         .fetch_all(db)
+    //         .await
+    //         .map(|rows| {
+    //             rows.into_iter().map(|row| {
+    //                 Issue {
+    //                     id: row.get(0),
+    //                     title: row.get(1),
+    //                     description: row.get(2),
+    //                 }
+    //             }).collect()
+    //         })
+    //         .map_err(AppError::from)
+    // }
 
-        query(&sql)
-            .bind(self.date_after)
-            .bind(self.date_before)
-            .fetch_all(db)
-            .await
-            .map(|rows| {
-                rows.into_iter().map(|row| {
-                    Issue {
-                        id: row.get(0),
-                        title: row.get(1),
-                        description: row.get(2),
-                    }
-                }).collect()
-            })
-            .map_err(AppError::from)
-    }
+    // async fn recent<'q>(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
+    //     let show = self.show_clause("r");
+    //     let sql = format!(r"
+    //         SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
+    //         LEFT JOIN (
+    //             SELECT issue_id, closed_at, MIN(created_at) as earliest_report, MAX(created_at) as latest_report
+    //             FROM reports
+    //             GROUP BY issue_id
+    //         ) r ON issues.id = r.issue_id
+    //         WHERE (r.earliest_report BETWEEN $1 AND $2) AND ({show})
+    //         ORDER BY r.latest_report DESC
+    //     ");
+    //
+    //     query(&sql)
+    //         .bind(self.date_after)
+    //         .bind(self.date_before)
+    //         .fetch_all(db)
+    //         .await
+    //         .map(|rows| {
+    //             rows.into_iter().map(|row| {
+    //                 Issue {
+    //                     id: row.get(0),
+    //                     title: row.get(1),
+    //                     description: row.get(2),
+    //                 }
+    //             }).collect()
+    //         })
+    //         .map_err(AppError::from)
+    // }
 
     async fn relevance(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
         let show = self.show_clause("r");

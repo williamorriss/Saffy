@@ -70,7 +70,7 @@ pub fn routes() -> OpenApiRouter<AppState> {
 
 #[utoipa::path(
     post,
-    path = "/issues",
+    path = "/api/issues",
     request_body = CreateIssue,
     responses(
         (status = 201, description = "New issue created"),
@@ -109,7 +109,8 @@ async fn make_initial_report(transaction: &mut Transaction<'_, Postgres>, user_u
 
 #[utoipa::path(
     get,
-    path = "/issues",
+    path = "/api/issues",
+    params(IssueQuery),
     responses(
         (status = 200, description = "All issues", body = Vec<Issue>),
         (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
@@ -123,42 +124,42 @@ async fn get_issues(query: Query<IssueQuery>, State(state): State<AppState>) -> 
 
 }
 
-#[utoipa::path(
-    get,
-    path = "/issues/{id}",
-    params(
-        ("id" = Uuid, Path, description = "Issue uuid")
-    ),
-    responses(
-        (status = 200, description = "All reports for issue", body = Vec<Report>),
-        (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
-    ),
-)]
-#[axum::debug_handler]
-async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) -> Result<Json<Vec<Report>>, AppError> {
-    let reports = get_all_reports(issue_id, &state.db).await?;
-    Ok(Json(reports))
-}
-
-async fn get_all_reports(issue_id: Uuid, db: &PgPool) -> Result<Vec<Report>, sqlx::Error>  {
-    query!(r#"
-            SELECT id, reporter_id, description, created_at, closed_at FROM reports WHERE issue_id = $1
-            ORDER BY created_at
-        "#, issue_id).fetch_all(db)
-        .await
-        .map(|rows| {
-            rows.into_iter().map(|row| {
-                Report {
-                    id: row.id,
-                    issue_id,
-                    reporter: row.reporter_id,
-                    description: row.description,
-                    created_at: row.created_at.and_utc(),
-                    closed_at: row.closed_at.map(|time| time.and_utc()),
-                }
-            }).collect()
-        })
-}
+// #[utoipa::path(
+//     get,
+//     path = "/issues/{id}",
+//     params(
+//         ("id" = Uuid, Path, description = "Issue uuid")
+//     ),
+//     responses(
+//         (status = 200, description = "All reports for issue", body = Vec<Report>),
+//         (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
+//     ),
+// )]
+// #[axum::debug_handler]
+// async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) -> Result<Json<Vec<Report>>, AppError> {
+//     let reports = get_all_reports(issue_id, &state.db).await?;
+//     Ok(Json(reports))
+// }
+// 
+// async fn get_all_reports(issue_id: Uuid, db: &PgPool) -> Result<Vec<Report>, sqlx::Error>  {
+//     query!(r#"
+//             SELECT id, reporter_id, description, created_at, closed_at FROM reports WHERE issue_id = $1
+//             ORDER BY created_at
+//         "#, issue_id).fetch_all(db)
+//         .await
+//         .map(|rows| {
+//             rows.into_iter().map(|row| {
+//                 Report {
+//                     id: row.id,
+//                     issue_id,
+//                     reporter: row.reporter_id,
+//                     description: row.description,
+//                     created_at: row.created_at.and_utc(),
+//                     closed_at: row.closed_at.map(|time| time.and_utc()),
+//                 }
+//             }).collect()
+//         })
+// }
 
 
 
