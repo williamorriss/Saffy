@@ -23,9 +23,7 @@ const CAS_ORIGIN: &str = "https://auth.bath.ac.uk";
 pub struct AuthSession(pub Session);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Session {
-    pub id: Uuid,
-}
+pub struct Session { pub id: Uuid }
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -45,27 +43,21 @@ impl<S> axum::extract::FromRequestParts<S> for AuthSession
 where
     S: Send + Sync,
 {
-    type Rejection = Response;
+    type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        use http::StatusCode;
-
         tracing::debug!("Authenticating user");
 
-        let session = TowerSession::from_request_parts(parts, state)
+        TowerSession::from_request_parts(parts, state)
             .await
-            .map_err(|_| StatusCode::UNAUTHORIZED.into_response())?;
-
-        let id = session
+            .map_err(|_| AppError::Unauthorized("Failed to retrieve session".to_string()))?
             .get::<Uuid>("id")
             .await
-            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to get session").into_response())?
-            .ok_or_else(|| {
-                tracing::warn!("No id found for session");
-                StatusCode::UNAUTHORIZED.into_response()
-            })?;
-
-        Ok(AuthSession(Session { id }))
+            .ok()
+            .flatten()
+            .map_or_else(
+                || Err(AppError::Unauthorized("session error".to_string())),
+                |id| Ok(AuthSession(Session { id })))
     }
 }
 

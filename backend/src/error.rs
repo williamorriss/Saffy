@@ -1,10 +1,12 @@
 use axum::{response::{IntoResponse, Response}, http::StatusCode, Json};
+use serde::Deserialize;
 use serde_json::json;
 use crate::error::AppError::DbError;
 
+#[derive(Debug)]
 pub enum AppError {
     NotFound(String),
-    // Unauthorized,
+    Unauthorized(String),
     Internal(anyhow::Error),
     BadRequest(String),
     DbError(sqlx::Error),
@@ -17,10 +19,10 @@ impl IntoResponse for AppError {
                 tracing::debug!("{} not found", msg);
                 (StatusCode::NOT_FOUND, msg)
             },
-            // AppError::Unauthorized => {
-            //     tracing::trace!("Unauthorized");
-            //     (StatusCode::UNAUTHORIZED, "Unauthorized".to_string())
-            // },
+            AppError::Unauthorized(_) => {
+                tracing::trace!("Unauthorized");
+                (StatusCode::UNAUTHORIZED, "Unauthorized".to_string())
+            },
             AppError::BadRequest(msg) => {
                 tracing::debug!("BadRequest: {}", msg);
                 (StatusCode::BAD_REQUEST, msg)
@@ -44,6 +46,12 @@ impl IntoResponse for AppError {
         };
 
         (status, Json(json!({ "error": message }))).into_response()
+    }
+}
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 

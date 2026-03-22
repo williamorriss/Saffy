@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useState } from "react";
-export function NewIssue () {
+export function SearchBar () {
     const { register, handleSubmit } = useForm();
     const navigate = useNavigate();
     const [data, setData] = useState("");
@@ -15,14 +15,12 @@ export function NewIssue () {
         resolver: zodResolver(CreateIssueSchema.omit({locationUuid : "3fa85f64-5717-4562-b3fc-2c963f66afa6"})),
     });
 
-    const submitNewIssue = async (event) => {
+    const submitSearch = async (event) => {
         event.preventDefault();
         const form = new FormData(event.target);
         const { error }
-            = await client.POST("/api/issues", {body : {
+            = await client.GET("/api/issues", {body : {
                 title: form.get("title"),
-                description: form.get("description"),
-                locationUuid: "3fa85f64-5717-4562-b3fc-2c963f66afa6"}
         });
 
         if (!error) {
@@ -32,8 +30,7 @@ export function NewIssue () {
 
     return (
         <form onSubmit={submitNewIssue}>
-            <input {...register("title")} placeholder="Subject" />
-            <input {...register("description")} placeholder="Description"/>
+            <input {...register("query")} placeholder="Searching...." />
             <input type="submit" />
         </form>
     );
