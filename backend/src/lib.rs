@@ -23,7 +23,7 @@ pub struct AppState {
 #[openapi(
     info(
         title = "knowle",
-        version = "-10.0.0",
+        version = "-1.0.0",
         description = "knowle dev api",
         contact(name = "will", email = "wvam20@bath.ac.uk"),
     ),
