@@ -10,7 +10,7 @@
     "license": {
       "name": ""
     },
-    "version": "-10.0.0"
+    "version": "-1.0.0"
   },
   "paths": {
     "/api/issues": {
@@ -25,26 +25,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "default": true
+              "type": "string"
             }
           },
           {
-            "name": "showOpen",
+            "name": "show",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "boolean",
-              "default": true
-            }
-          },
-          {
-            "name": "showClosed",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false
+              "$ref": "#/components/schemas/IssueQueryShow"
             }
           },
           {
@@ -123,6 +112,44 @@
           },
           "500": {
             "description": "Failed to create new issue"
+          }
+        }
+      }
+    },
+    "/api/issues/{id}": {
+      "get": {
+        "tags": [
+          "crate::issues"
+        ],
+        "operationId": "get_issue",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Issue uuid",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All reports for issue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Report"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Could not make new issue"
           }
         }
       }
@@ -301,6 +328,14 @@
           "NewestFirst",
           "Relevance",
           "RecentlyUpdated"
+        ]
+      },
+      "IssueQueryShow": {
+        "type": "string",
+        "enum": [
+          "Open",
+          "Closed",
+          "All"
         ]
       },
       "Location": {
