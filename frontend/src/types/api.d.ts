@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/issues/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_issue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/cas/{auth_id}": {
         parameters: {
             query?: never;
@@ -107,6 +123,8 @@ export interface components {
         };
         /** @enum {string} */
         IssueQueryOrder: "OldestFirst" | "NewestFirst" | "Relevance" | "RecentlyUpdated";
+        /** @enum {string} */
+        IssueQueryShow: "Open" | "Closed" | "All";
         Location: {
             /** Format: int32 */
             id: number;
@@ -151,8 +169,7 @@ export interface operations {
         parameters: {
             query?: {
                 search?: string;
-                showOpen?: boolean;
-                showClosed?: boolean;
+                show?: components["schemas"]["IssueQueryShow"];
                 location?: string;
                 dateAfter?: string;
                 dateBefore?: string;
@@ -203,6 +220,36 @@ export interface operations {
                 content?: never;
             };
             /** @description Failed to create new issue */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_issue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Issue uuid */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All reports for issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"][];
+                };
+            };
+            /** @description Could not make new issue */
             500: {
                 headers: {
                     [name: string]: unknown;

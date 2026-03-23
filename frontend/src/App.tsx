@@ -5,7 +5,8 @@ import createClient from "openapi-fetch";
 import { Home } from "./pages/Home";
 import { NewIssue } from "./pages/NewIssue";
 import {type JSX} from "react";
-import { useAuth} from "./AuthContext";
+import { useAuth } from "./AuthContext";
+import { IssuePage } from "./pages/IssuePage";
 
 export const BACKEND_URL: string = "https://localhost:8000";
 export const client
@@ -32,7 +33,8 @@ function App() {
 
         <Routes>
           <Route path="/" element={<Home />} />
-            <Route path="/new-issue" element={<NewIssue />} />
+            <Route path="/issues/new" element={<NewIssue />} />
+            <Route path="/issues/:issueID" element={<IssuePage/>}/>
         </Routes>
       </>
   );

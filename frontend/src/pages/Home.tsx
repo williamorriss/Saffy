@@ -1,5 +1,5 @@
 import { type JSX, useEffect} from "react"
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import { IssueFeed } from "../components/IssueFeed"
 import { useAuth } from "../AuthContext";
 
@@ -14,7 +14,7 @@ export function Home(): JSX.Element {
     useSession();
     return (
         <>
-            <button onClick={() => navigate("/new-issue")}>New Issue</button>
+            <button onClick={() => navigate("/issues/new")}>New Issue</button>
             <IssueFeed />
         </>
     );

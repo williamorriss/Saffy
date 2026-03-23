@@ -5,7 +5,7 @@ use utoipa::{IntoParams, ToSchema};
 use utoipa::openapi::KnownFormat::Duration;
 use uuid::Uuid;
 use crate::AppError;
-use crate::issues::Issue;
+use crate::issues::{Issue, Report};
 use crate::issues::search::IssueQueryOrder::{NewestFirst, OldestFirst, RecentlyUpdated, Relevance};
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -189,4 +189,25 @@ impl IssueQuery {
     //         "SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues"
     //     );
     // }
+}
+
+
+pub async fn get_all_reports(issue_id: Uuid, db: &PgPool) -> Result<Vec<Report>, sqlx::Error>  {
+    query!(r#"
+            SELECT id, reporter_id, description, created_at, closed_at FROM reports WHERE issue_id = $1
+            ORDER BY created_at
+        "#, issue_id).fetch_all(db)
+        .await
+        .map(|rows| {
+            rows.into_iter().map(|row| {
+                Report {
+                    id: row.id,
+                    issue_id,
+                    reporter: row.reporter_id,
+                    description: row.description,
+                    created_at: row.created_at.and_utc(),
+                    closed_at: row.closed_at.map(|time| time.and_utc()),
+                }
+            }).collect()
+        })
 }
