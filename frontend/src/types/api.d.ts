@@ -3,204 +3,334 @@
  * Do not make direct changes to the file.
  */
 
-
 export interface paths {
-  "/api/issues": {
-    get: operations["get_issues"];
-    post: operations["post_issue"];
-  };
-  "/auth/cas/{auth_id}": {
-    get: operations["cas_callback"];
-  };
-  "/auth/login": {
-    get: operations["login"];
-  };
-  "/auth/logout": {
-    get: operations["logout"];
-  };
-  "/auth/session": {
-    get: operations["get_session"];
-  };
+    "/api/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_issues"];
+        put?: never;
+        post: operations["post_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/cas/{auth_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cas_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["login"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["logout"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-
 export type webhooks = Record<string, never>;
-
 export interface components {
-  schemas: {
-    CreateIssue: {
-      title?: string | null;
-      description?: string | null;
-      /** Format: uuid */
-      locationUuid: string;
+    schemas: {
+        CreateIssue: {
+            title?: string | null;
+            description?: string | null;
+            /** Format: uuid */
+            locationUuid: string;
+        };
+        CreateReport: {
+            /** Format: uuid */
+            issueId: string;
+            description: string;
+        };
+        Issue: {
+            /** Format: uuid */
+            id: string;
+            title?: string | null;
+            description?: string | null;
+        };
+        /** @enum {string} */
+        IssueQueryOrder: "OldestFirst" | "NewestFirst" | "Relevance" | "RecentlyUpdated";
+        Location: {
+            /** Format: int32 */
+            id: number;
+            /** Format: float */
+            latitude: number;
+            /** Format: float */
+            longitude: number;
+            /** Format: int32 */
+            level: number;
+            description?: string | null;
+        };
+        Report: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            reporter: string;
+            description?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            closedAt?: string | null;
+        };
+        User: {
+            /** Format: uuid */
+            id: string;
+            username: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
     };
-    CreateReport: {
-      /** Format: uuid */
-      issueId: string;
-      description: string;
-    };
-    Issue: {
-      /** Format: uuid */
-      id: string;
-      title?: string | null;
-      description?: string | null;
-    };
-    /** @enum {string} */
-    IssueQueryOrder: "OldestFirst" | "NewestFirst" | "Relevance" | "RecentlyUpdated";
-    Location: {
-      /** Format: int32 */
-      id: number;
-      /** Format: float */
-      latitude: number;
-      /** Format: float */
-      longitude: number;
-      /** Format: int32 */
-      level: number;
-      description?: string | null;
-    };
-    Report: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      issueId: string;
-      /** Format: uuid */
-      reporter: string;
-      description?: string | null;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      closedAt?: string | null;
-    };
-    User: {
-      /** Format: uuid */
-      id: string;
-      username: string;
-      /** Format: date-time */
-      createdAt: string;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-
 export type $defs = Record<string, never>;
-
-export type external = Record<string, never>;
-
 export interface operations {
-
-  get_issues: {
-    parameters: {
-      query?: {
-        search?: string;
-        showOpen?: boolean;
-        showClosed?: boolean;
-        location?: string;
-        dateAfter?: string;
-        dateBefore?: string;
-        ordering?: components["schemas"]["IssueQueryOrder"];
-      };
-    };
-    responses: {
-      /** @description All issues */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Issue"][];
+    get_issues: {
+        parameters: {
+            query?: {
+                search?: string;
+                showOpen?: boolean;
+                showClosed?: boolean;
+                location?: string;
+                dateAfter?: string;
+                dateBefore?: string;
+                ordering?: components["schemas"]["IssueQueryOrder"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      /** @description Could not make new issue */
-      500: {
-        content: never;
-      };
-    };
-  };
-  post_issue: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateIssue"];
-      };
-    };
-    responses: {
-      /** @description New issue created */
-      201: {
-        content: never;
-      };
-      /** @description Failed to create new issue */
-      500: {
-        content: never;
-      };
-    };
-  };
-  cas_callback: {
-    parameters: {
-      path: {
-        /** @description Issued ID upon entering the login endpoint */
-        auth_id: string;
-      };
-    };
-    responses: {
-      /** @description Redirect to redirect url */
-      301: {
-        content: never;
-      };
-      /** @description Malformed URL redirect */
-      400: {
-        content: never;
-      };
-      /** @description Auth ID not recognised */
-      404: {
-        content: never;
-      };
-      /** @description Internal server error */
-      500: {
-        content: never;
-      };
-    };
-  };
-  login: {
-    parameters: {
-      query: {
-        /** @description Url to redirect to after login */
-        redirect: string;
-      };
-    };
-    responses: {
-      /** @description Redirect to CAS auth */
-      303: {
-        content: never;
-      };
-      /** @description Malformed URL redirect */
-      400: {
-        content: never;
-      };
-      /** @description Internal server error */
-      500: {
-        content: never;
-      };
-    };
-  };
-  logout: {
-    responses: {
-      /** @description Redirect to CAS logout */
-      303: {
-        content: never;
-      };
-    };
-  };
-  get_session: {
-    responses: {
-      /** @description User */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
+        requestBody?: never;
+        responses: {
+            /** @description All issues */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"][];
+                };
+            };
+            /** @description Could not make new issue */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-      };
-      /** @description User not found */
-      404: {
-        content: never;
-      };
     };
-  };
+    post_issue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateIssue"];
+            };
+        };
+        responses: {
+            /** @description New issue created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Failed to create new issue */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cas_callback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Issued ID upon entering the login endpoint */
+                auth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to redirect url */
+            301: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed URL redirect */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Auth ID not recognised */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    login: {
+        parameters: {
+            query: {
+                /** @description Url to redirect to after login */
+                redirect: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to CAS auth */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed URL redirect */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to CAS logout */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description User not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
 }

@@ -2,12 +2,13 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool, Row};
 use utoipa::{IntoParams, ToSchema};
+use utoipa::openapi::KnownFormat::Duration;
 use uuid::Uuid;
 use crate::AppError;
 use crate::issues::Issue;
 use crate::issues::search::IssueQueryOrder::{NewestFirst, OldestFirst, RecentlyUpdated, Relevance};
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 #[serde(try_from = "String")]
 pub enum IssueQueryOrder {
     OldestFirst,
@@ -20,28 +21,50 @@ impl TryFrom<String> for IssueQueryOrder {
     type Error = AppError;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.to_lowercase().as_str() {
-            "oldest" => Ok(OldestFirst),
-            "newest" => Ok(NewestFirst),
+            "oldestfirst" => Ok(OldestFirst),
+            "newestfirst" => Ok(NewestFirst),
             "relevance" => Ok(Relevance),
-            "recent" => Ok(RecentlyUpdated),
+            "recentlyupdated" => Ok(RecentlyUpdated),
             _ => Err(AppError::BadRequest("Invalid `order` parameter".to_string())),
         }
     }
-
 }
 
-#[derive(Deserialize, IntoParams)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(try_from = "String")]
+pub enum IssueQueryShow {
+    Open,
+    Closed,
+    All
+}
+
+impl TryFrom<String> for IssueQueryShow {
+    type Error = AppError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "open" => Ok(IssueQueryShow::All),
+            "closed" => Ok(IssueQueryShow::Closed),
+            "all" => Ok(IssueQueryShow::Open),
+            _ => Err(AppError::BadRequest("Invalid `show` parameter".to_string())),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query, rename_all = "camelCase")]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 pub struct IssueQuery {
     search: Option<String>,
     // filters: Option<Vec<String>>, //todo implement
-    show_open: bool,
-    show_closed: bool,
+    #[param(required = false)]
+    show: IssueQueryShow,
     location: Option<Uuid>,
+    #[param(required = false)]
     date_after: DateTime<Utc>,
+    #[param(required = false)]
     date_before: DateTime<Utc>,
+    #[param(required = false)]
     ordering: IssueQueryOrder,
 }
 
@@ -51,10 +74,9 @@ impl Default for IssueQuery {
             search: None,
             // filters: None,
             location: None,
-            show_open: true,
-            show_closed: false,
-            date_after: DateTime::<Utc>::MIN_UTC,
-            date_before: DateTime::<Utc>::MAX_UTC,
+            show: IssueQueryShow::Open,
+            date_after: DateTime::<Utc>::UNIX_EPOCH,
+            date_before: Utc::now() + std::time::Duration::from_hours(24),
             ordering: NewestFirst,
         }
     }
@@ -62,10 +84,6 @@ impl Default for IssueQuery {
 
 impl IssueQuery {
     pub async fn query(self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
-        if !self.show_open && !self.show_closed {
-            return Err(AppError::NotFound("Logically Empty".to_string()));
-        }
-
         match self.ordering {
             NewestFirst => self.newest(db).await,
             // OldestFirst => self.oldest(db).await,
@@ -76,21 +94,28 @@ impl IssueQuery {
     }
 
     async fn newest(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
-        let show = self.show_clause("r");
+        use IssueQueryShow as Show;
+        let show = match self.show {
+            Show::All => "TRUE",
+            Show::Closed => "closed_at IS NOT NULL",
+            Show::Open => "closed_at IS NULL",
+        };
+
         let sql = format!(r"
             SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
-            LEFT JOIN (
-                SELECT issue_id, closed_at, MIN(created_at) as earliest_report
+            INNER JOIN (
+                SELECT issue_id, MIN(created_at) as earliest_report
                 FROM reports
+                WHERE {show} AND created_at BETWEEN $1 AND $2
                 GROUP BY issue_id
-            ) earliest_reports ON issues.id = earliest_reports.issue_id
-            WHERE (r.earliest_report BETWEEN $1 AND $2) AND ({show})
+            ) r ON issues.id = r.issue_id
+            GROUP BY r.earliest_report, issues.id
             ORDER BY r.earliest_report DESC
         ");
 
+        tracing::debug!("sql:\n{}", sql);
 
         query(&sql)
-            .bind(self.search.to_owned().unwrap_or("".to_string()))
             .bind(self.date_after)
             .bind(self.date_before)
             .fetch_all(db)
@@ -106,69 +131,14 @@ impl IssueQuery {
             })
             .map_err(AppError::from)
     }
-
-    // async fn oldest(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
-    //     let show = self.show_clause("r");
-    //     let sql = format!(r"
-    //         SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
-    //         LEFT JOIN (
-    //             SELECT issue_id, closed_at, MIN(created_at) as earliest_report
-    //             FROM reports
-    //             GROUP BY issue_id
-    //         ) earliest_reports ON issues.id = earliest_reports.issue_id
-    //         WHERE (r.earliest_report BETWEEN $1 AND $2) AND ({show})
-    //         ORDER BY r.earliest_report ASC
-    //     ");
-    //
-    //     query(&sql)
-    //         .bind(self.date_after)
-    //         .bind(self.date_before)
-    //         .fetch_all(db)
-    //         .await
-    //         .map(|rows| {
-    //             rows.into_iter().map(|row| {
-    //                 Issue {
-    //                     id: row.get(0),
-    //                     title: row.get(1),
-    //                     description: row.get(2),
-    //                 }
-    //             }).collect()
-    //         })
-    //         .map_err(AppError::from)
-    // }
-
-    // async fn recent<'q>(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
-    //     let show = self.show_clause("r");
-    //     let sql = format!(r"
-    //         SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
-    //         LEFT JOIN (
-    //             SELECT issue_id, closed_at, MIN(created_at) as earliest_report, MAX(created_at) as latest_report
-    //             FROM reports
-    //             GROUP BY issue_id
-    //         ) r ON issues.id = r.issue_id
-    //         WHERE (r.earliest_report BETWEEN $1 AND $2) AND ({show})
-    //         ORDER BY r.latest_report DESC
-    //     ");
-    //
-    //     query(&sql)
-    //         .bind(self.date_after)
-    //         .bind(self.date_before)
-    //         .fetch_all(db)
-    //         .await
-    //         .map(|rows| {
-    //             rows.into_iter().map(|row| {
-    //                 Issue {
-    //                     id: row.get(0),
-    //                     title: row.get(1),
-    //                     description: row.get(2),
-    //                 }
-    //             }).collect()
-    //         })
-    //         .map_err(AppError::from)
-    // }
-
     async fn relevance(&self, db: &PgPool) -> Result<Vec<Issue>, AppError> {
-        let show = self.show_clause("r");
+        use IssueQueryShow as Show;
+        let show = match self.show {
+            Show::All => "TRUE",
+            Show::Closed => "closed_at IS NOT NULL",
+            Show::Open => "closed_at IS NULL",
+        };
+
         let sql = format!(r"
             SELECT
                 issues.id,
@@ -183,17 +153,15 @@ impl IssueQuery {
                 ) AS rank
             FROM issues
             LEFT JOIN (
-                SELECT
-                    issue_id,
-                    closed_at,
-                    MIN(created_at) AS earliest_report,
-                    string_agg(description, ' ') AS combined_description
+                SELECT issue_id, MIN(created_at) AS earliest_report, string_agg(description, ' ') AS combined_description
                 FROM reports
-                GROUP BY issue_id, closed_at
+                WHERE {show} AND created_at BETWEEN $2 AND $3
+                GROUP BY issue_id
             ) r ON issues.id = r.issue_id
-            WHERE (r.earliest_report BETWEEN $2 AND $3) AND ({show})
             ORDER BY rank DESC
         ");
+
+        tracing::debug!("sql:\n{}", sql);
 
         query(&sql)
             .bind(self.search.to_owned().unwrap_or("".to_string()))
@@ -211,22 +179,6 @@ impl IssueQuery {
                 }).collect()
             })
             .map_err(AppError::from)
-    }
-
-    fn show_clause(&self, var: &str) -> String {
-        let show_open = if self.show_open {
-            format!("{var}.closed_at IS NULL")
-        } else {
-            "FALSE".to_string()
-        };
-
-        let show_closed = if self.show_closed {
-            format!("{var}.closed_at IS NOT NULL")
-        } else {
-            "FALSE".to_string()
-        };
-
-        format!("{show_open} OR {show_closed}")
     }
 
 

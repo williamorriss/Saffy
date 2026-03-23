@@ -118,7 +118,7 @@ async fn make_initial_report(transaction: &mut Transaction<'_, Postgres>, user_u
 )]
 #[axum::debug_handler]
 async fn get_issues(query: Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<Issue>>, AppError> {
-    tracing::info!("Executing GET /auth/issues");
+    tracing::info!("Executing GET /auth/issues\n{:?}", query.0);
     // filters not implemented yet
     query.0.query(&state.db).await.map(Json)
 
@@ -140,7 +140,7 @@ async fn get_issues(query: Query<IssueQuery>, State(state): State<AppState>) -> 
 //     let reports = get_all_reports(issue_id, &state.db).await?;
 //     Ok(Json(reports))
 // }
-// 
+//
 // async fn get_all_reports(issue_id: Uuid, db: &PgPool) -> Result<Vec<Report>, sqlx::Error>  {
 //     query!(r#"
 //             SELECT id, reporter_id, description, created_at, closed_at FROM reports WHERE issue_id = $1
