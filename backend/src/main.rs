@@ -14,14 +14,15 @@ async fn main() -> anyhow::Result<()> {
     let db_pool = make_db_connection().await?;
     let app = app(&db_pool)?;
 
-    let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file("cert.pem", "key.pem")
-        .await?;
+    // let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file("cert.pem", "key.pem")
+    //     .await?;
 
     let address = format!("{}:{}", backend::ADDRESS, backend::PORT).parse::<std::net::SocketAddr>()?;
 
     println!("Serving on {}", backend::ORIGIN);
 
-    axum_server::bind_rustls(address, tls_config)
+    //axum_server::bind_rustls(address, tls_config)
+    axum_server::bind(address)
         .serve(app.into_make_service())
         .await?;
 
@@ -47,11 +48,6 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
     use http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE, ACCEPT};
     use http::Method;
 
-    let auth_cache = moka::future::Cache::builder()
-        .time_to_live(std::time::Duration::from_secs(600))
-        .max_capacity(10_000)
-        .build();
-
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(true)
@@ -60,7 +56,7 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
     let backend_origin = backend::ORIGIN.parse::<http::HeaderValue>()?;
     tracing::debug!("Cors allow origin {:?}", backend_origin);
 
-    let dev_origin = "https://localhost:5173".parse::<http::HeaderValue>()?;
+    let dev_origin = "http://localhost:5173".parse::<http::HeaderValue>()?;
     tracing::debug!("Cors allow origin {:?}", dev_origin);
 
     let cors = CorsLayer::new()
@@ -76,7 +72,7 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
 
     Ok(router
         .layer(TraceLayer::new_for_http())
-        .with_state(backend::AppState {db: db_pool.clone(), auth_cache: std::sync::Arc::new(auth_cache)})
+        .with_state(backend::AppState {db: db_pool.clone()})
         .layer(session_layer)
         .fallback_service(
             ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")))

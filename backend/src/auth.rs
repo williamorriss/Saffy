@@ -16,6 +16,7 @@ use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 use std::collections::HashMap;
+use base64::prelude::*;
 
 const CAS_ORIGIN: &str = "https://auth.bath.ac.uk";
 
@@ -82,24 +83,19 @@ pub fn routes() -> OpenApiRouter<AppState> {
     )
 )]
 #[axum::debug_handler]
-pub async fn login(
-    Query(query): Query<HashMap<String, String>>,
-    State(state): State<AppState>,
-) -> Result<Redirect, AppError> {
+pub async fn login(Query(query): Query<HashMap<String, String>>) -> Result<Redirect, AppError> {
     tracing::info!("Executing POST /auth/login");
 
-    let redirect = Url::parse(
-        query.get("redirect")
-            .ok_or_else(|| AppError::BadRequest("Malformed redirect Url".to_string()))?
-    )?;
+    let redirect = query.get("redirect")
+        .ok_or_else(|| AppError::BadRequest("Malformed redirect Url".to_string()))?;
 
-    let auth_id = Uuid::new_v4();
+    let redirect64 = BASE64_URL_SAFE.encode(Url::parse(redirect)?.as_str());
+
     let cas_url = Url::parse_with_params(
         &format!("{CAS_ORIGIN}/login"),
-        &[("service", format!("{ORIGIN}/auth/cas/{auth_id}"))],
+        &[("service", format!("{ORIGIN}/auth/cas/{redirect64}"))],
     ).map_err(|e| AppError::Internal(e.into()))?;
 
-    state.auth_cache.insert(auth_id, redirect).await;
     Ok(Redirect::to(cas_url.as_str()))
 }
 
@@ -139,7 +135,7 @@ async fn get_session(
 
 #[utoipa::path(
     get,
-    path = "/auth/cas/{auth_id}",
+    path = "/auth/cas/{redirect64}",
     responses(
         (status = 301, description = "Redirect to redirect url"),
         (status = NOT_FOUND, description = "Auth ID not recognised"),
@@ -152,20 +148,24 @@ async fn get_session(
 )]
 #[axum::debug_handler]
 async fn cas_callback(
-    Path(state_id): Path<Uuid>,
+    Path(redirect64): Path<String>,
     Query(query): Query<HashMap<String, String>>,
     session: TowerSession,
     State(state): State<AppState>,
 ) -> Result<Redirect, AppError> {
-    tracing::info!("Executing GET /auth/cas/{}", state_id);
+    tracing::info!("Executing GET /auth/cas/{}", redirect64);
 
-    let redirect_url = state.auth_cache.get(&state_id).await
-        .ok_or_else(|| AppError::NotFound("State ID not found in cache".to_string()))?;
+    let redirect = String::from_utf8(
+        BASE64_URL_SAFE.decode(&redirect64)
+            .map_err(|_| AppError::BadRequest("Invalid encoding".to_string()))?
+    ).map_err(|_| AppError::BadRequest("Invalid UTF".to_string()))?;
+
+    let redirect_url = Url::parse(&redirect)
+        .map_err(|_| AppError::BadRequest("Invalid URL".to_string()))?;
 
     tracing::debug!("Found redirect: {}", redirect_url);
 
-    state.auth_cache.invalidate(&state_id).await;
-    let xml = get_cas_response(&state_id, &query).await?;
+    let xml = get_cas_response(&redirect64, &query).await?;
     let username = parse_xml_response(&xml)?;
 
     let id = match get_user_id(&username, &state.db).await {
@@ -228,14 +228,14 @@ async fn get_user(id: Uuid, db: &PgPool) -> Result<User, sqlx::Error> {
     })
 }
 
-async fn get_cas_response(auth_id: &Uuid, params: &HashMap<String, String>) -> Result<String, AppError> {
+async fn get_cas_response(redirect64: &str, params: &HashMap<String, String>) -> Result<String, AppError> {
     let ticket = params.get("ticket")
         .ok_or_else(|| AppError::BadRequest("Missing ticket".to_string()))?;
 
     let cas_url = Url::parse_with_params(
         &format!("{CAS_ORIGIN}/serviceValidate"),
         &[
-            ("service", &format!("{ORIGIN}/auth/cas/{auth_id}")),
+            ("service", &format!("{ORIGIN}/auth/cas/{redirect64}")),
             ("ticket", ticket),
         ],
     )?;

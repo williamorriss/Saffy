@@ -8,7 +8,8 @@ import {type JSX} from "react";
 import { useAuth } from "./AuthContext";
 import { IssuePage } from "./pages/IssuePage";
 
-export const BACKEND_URL: string = "https://localhost:8000";
+// export const BACKEND_URL: string = "https://localhost:8000";
+export const BACKEND_URL: string = "http://localhost:8000";
 export const client
     = createClient<paths>({ baseUrl: BACKEND_URL, credentials: "include" });
 
