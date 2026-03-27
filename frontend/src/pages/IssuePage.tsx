@@ -1,13 +1,7 @@
-import { IssueFeed } from "../components/IssueFeed"
-import { useAuth } from "../AuthContext";
 import { useParams } from 'react-router-dom';
 import { type JSX, useState, useEffect } from "react";
 import type { Report } from "../types/index";
 import { client } from "../App";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useNavigate } from "react-router-dom";
 
 
 export function IssuePage() {
