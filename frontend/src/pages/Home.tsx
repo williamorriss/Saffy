@@ -1,10 +1,11 @@
-import { type JSX, useEffect } from "react";
+import { type JSX, useEffect, useState} from "react";
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../hooks/AuthContext";
 import { newIssueButton } from "../components/NewIssueButton";
 import { IssueFeed } from "../components/IssueFeed";
 import { SearchBar } from "../components/SearchBar";
 import { useIssueFeed } from "../hooks/UseIssueFeed";
+import { SearchableDropdown } from "../components/DropDown";
 
 import { IssueFeedLegacy } from "../components/IssueFeedLegacy";
 
@@ -12,6 +13,20 @@ function useSession() {
     const { getSession } = useAuth();
     useEffect(() => {getSession();}, []);
 }
+
+const exampleIssueType : string[] = [
+    "Delay",
+    "Cancellation",
+    "Broken",
+    "Other",
+];
+const exampleLocationType : string[] = [
+    "Chancelor's Building",
+    "1W",
+    "2W",
+    "University Hall",
+    "Other"
+];
 
 export function Home(): JSX.Element {
     const feedHook = useIssueFeed();
@@ -33,7 +48,19 @@ export function Home(): JSX.Element {
 
                         <div className="flex items-center gap-4">
                             <nav className="flex items-center gap-4">
+                                <SearchableDropdown 
+                                  options={exampleIssueType.map((issueType, index) => ({ id: index.toString(), label: issueType, value: issueType }))}
+                                  onSelect={(option) => feedHook.updateFilter({issue_type: option?.value})}
+                                  placeholder="Issue Type"
+                                  searchPlaceholder="Search countries..."
+                                />
 
+                                <SearchableDropdown 
+                                  options={exampleLocationType.map((locationType, index) => ({ id: index.toString(), label: locationType, value: locationType }))}
+                                  onSelect={(option) => feedHook.updateFilter({location: option?.value})}
+                                  placeholder="Location"
+                                  searchPlaceholder="Search countries..."
+                                />
                             </nav>
                         </div>
                     </div>
