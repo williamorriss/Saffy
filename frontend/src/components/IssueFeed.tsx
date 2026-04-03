@@ -91,7 +91,7 @@ function SearchBar ({ setIssues, options } : SearchProps) {
 function issuePanel({issue, navigate}: {issue: Issue, navigate: Function}): JSX.Element {
     return (
         <div key = {issue.id} className="border rounded-md p-4 mb-3 bg-white">
-            <h3 className="text-base font-semibold mb-2">{issue.title}</h3>
+            <h3 className="text-base font-semibold mb-2 text-black">{issue.title}</h3>
             <p className="text-sm text-gray-600"> {issue.description} </p>
             <button onClick={() => navigate(`/issues/${issue.id}`)}/>
         </div>
@@ -174,6 +174,7 @@ export function IssueFeed() : JSX.Element {
 
     return (
         <>
+            
             <QueryFilter setIssues={setIssues} options = {options} setOptions={setOptions} />
             <SearchBar setIssues={setIssues} options = {options} />
             ISSUES:
