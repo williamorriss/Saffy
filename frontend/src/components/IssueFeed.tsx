@@ -1,5 +1,5 @@
 import { type JSX, useState, useEffect } from "react";
-import type {Issue} from "../types/index";
+import type {Issue, IssueQueryShow} from "../types/index";
 import { client } from "../App";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,7 @@ const SearchSchema = z.object({search : z.string().default("")});
 
 type SearchProps = {
     setIssues: (issues: Issue[]) => void,
-    options: QueryProps
+    options: QueryFilter
 };
 
 type QueryProps = {
@@ -35,14 +35,14 @@ const defaultQueryFilter: QueryFilter = {
 }
 
 
-function getShow(options): string {
-    if (options.show_open && options.show_closed) return "all";
-    if (options.show_open) return "open";
-    if (options.show_closed) return "closed";
-    return "";
+function getShow(options : QueryFilter): IssueQueryShow | undefined {
+    if (options.show_open && options.show_closed) return "All";
+    if (options.show_open) return "Open";
+    if (options.show_closed) return "Closed";
+    return undefined;
 }
 
-function SearchBar ({ setIssues, options } : SearchProps)  {
+function SearchBar ({ setIssues, options } : SearchProps) {
     const { register, watch, formState: {errors} } = useForm({
         resolver: zodResolver(SearchSchema),
     });
@@ -88,7 +88,7 @@ function SearchBar ({ setIssues, options } : SearchProps)  {
     );
 }
 
-function issuePanel({issue, navigate}): JSX.Element {
+function issuePanel({issue, navigate}: {issue: Issue, navigate: Function}): JSX.Element {
     return (
         <div key = {issue.id} className="border rounded-md p-4 mb-3 bg-white">
             <h3 className="text-base font-semibold mb-2">{issue.title}</h3>
@@ -135,7 +135,6 @@ function QueryFilter({setIssues, options, setOptions}: QueryProps) {
             <label>
                 <input
                     type="checkbox"
-                    value={options.show_open}
                     checked={openChecked}
                     onChange={toggleShowOpen}
                 />
@@ -144,7 +143,6 @@ function QueryFilter({setIssues, options, setOptions}: QueryProps) {
             <label>
                 <input
                     type="checkbox"
-                    value={options.show_closed}
                     checked={closedChecked}
                     onChange={toggleShowClosed}
                 />

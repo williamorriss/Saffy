@@ -10,8 +10,14 @@ export function IssuePage() {
     console.log(issueID);
 
     useEffect(() => {
+        if (!issueID) return;
+
         const fetch = async () => {
-            const {data} = await client.GET(`/api/issues/${issueID}`, {});
+            const {data} = await client.GET("/api/issues/{id}", {
+                params:{
+                    path: {id: issueID}
+                }
+            });
             if (data) {
                 setReports(data);
             }
