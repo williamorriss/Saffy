@@ -27,10 +27,20 @@ function loginLogoutLink() : JSX.Element {
 function App() {
   return (
       <>
-        <nav>
-          <Link to="/">Home</Link>
-            {loginLogoutLink()}
-        </nav>
+        <div className="fixed top-0 left-0 right-0 h-16 bg-gray-800 flex items-center justify-between px-6">
+          <div className="flex items-center gap-4">
+            <nav className="flex items-center gap-4">
+              <Link to="/" className="text-white hover:text-blue-400 transition-colors"> Home </Link>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <nav className="flex items-center gap-4">
+              {loginLogoutLink()}
+            </nav>
+          </div>
+        </div>
+        
 
         <Routes>
           <Route path="/" element={<Home />} />
