@@ -14,8 +14,8 @@ export function Home(): JSX.Element {
     useSession();
     return (
         <>
-            <button onClick={() => navigate("/issues/new")}>New Issue</button>
-            <div className="absolute left-1/32 top-1/8 w-2/3 bg-gray-800">
+            <div className="relative left-1/2 w-4/5 bg-gray-800 -translate-x-1/2">
+                <button onClick={() => navigate("/issues/new")}>New Issue</button>
                 <IssueFeed />
             </div>
         </>
