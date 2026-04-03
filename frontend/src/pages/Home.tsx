@@ -1,4 +1,4 @@
-import { type JSX, useEffect} from "react";
+import { type JSX, useEffect } from "react";
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../hooks/AuthContext";
 import { newIssueButton } from "../components/NewIssueButton";
@@ -20,23 +20,27 @@ export function Home(): JSX.Element {
 
     return (
         <> 
-            <div className="relative left-1/2 w-4/5 bg-gray-800 -translate-x-1/2">
-                <div className="w-full flex justify-between px-6 pb-0 pt-4">
-                    <div className="flex items-center gap-4">
-                        <nav className="flex items-center gap-4">
-                            {newIssueButton(navigate)}
-                        </nav>
+            <div className="relative w-4/5 mx-auto">
+                <div className="absolute inset-0 bg-gray-800 -z-10"></div>
+
+                <div className="relative">
+                    <div className="w-full flex justify-between px-6 pb-0 pt-4">
+                        <div className="flex items-center gap-4">
+                            <nav className="flex items-center gap-4">
+                                {newIssueButton(navigate)}
+                            </nav>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <nav className="flex items-center gap-4">
+
+                            </nav>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <nav className="flex items-center gap-4">
-
-                        </nav>
-                    </div>
+                    <SearchBar feedHook={feedHook} />
+                    <IssueFeed feedHook={feedHook} />
                 </div>
-
-                <SearchBar feedHook={feedHook} />
-                <IssueFeed feedHook={feedHook} />
             </div>
         </>
     );

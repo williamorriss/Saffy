@@ -14,13 +14,14 @@ export const client
     = createClient<paths>({ baseUrl: BACKEND_URL, credentials: "include" });
 
 function loginLogoutLink() : JSX.Element {
+  const className : string = "!bg-blue-500 text-white rounded-lg hover:!bg-blue-600 transition-colors cursor-pointer"
   const { isLoggedIn, login, logout} = useAuth();
   console.log(isLoggedIn());
 
   if (!isLoggedIn()) {
-    return <button onClick={login}> Login </button>
+    return <button onClick={login} className={className}> Login </button>
   } else {
-    return <button onClick={logout}>Logout</button>
+    return <button onClick={logout} className={className}>Logout</button>
   }
 }
 
