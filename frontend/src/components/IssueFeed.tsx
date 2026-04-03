@@ -5,11 +5,14 @@ import { useNavigate } from "react-router-dom";
 
 function issuePanel({issue, navigate}: {issue: Issue, navigate: Function}): JSX.Element {
     return (
-        <div key = {issue.id} className="border rounded-md p-4 mb-3 bg-white">
-            <h3 className="text-base font-semibold mb-2 text-black">{issue.title}</h3>
-            <p className="text-sm text-gray-600"> {issue.description} </p>
-            <button onClick={() => navigate(`/issues/${issue.id}`)}/>
-        </div>
+        <button 
+            onClick={() => navigate(`/issues/${issue.id}`)} 
+            key={issue.id} 
+            className="w-full min-h-[100px] px-4 py-3 mb-3 !bg-white border border-black hover:!bg-gray-100 transition-colors flex flex-col items-center justify-center"
+        >
+            <h2 className="text-lg font-bold mb-1 !text-black text-center">{issue.title}</h2>
+            <p className="text-sm !text-gray-600 text-center">{issue.description}</p>
+        </button>
     );
 }
 
@@ -23,7 +26,6 @@ export function IssueFeed({feedHook} : {feedHook: UseIssueFeedReturn}) : JSX.Ele
 
     return (
         <>
-            Issues:
             {displayIssues}
         </>
     )
