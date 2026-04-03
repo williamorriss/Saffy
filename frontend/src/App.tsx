@@ -5,7 +5,7 @@ import createClient from "openapi-fetch";
 import { Home } from "./pages/Home";
 import { NewIssue } from "./pages/NewIssue";
 import {type JSX} from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./hooks/AuthContext.tsx";
 import { IssuePage } from "./pages/IssuePage";
 
 // export const BACKEND_URL: string = "https://localhost:8000";

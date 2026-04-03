@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App.tsx";
 
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from "./AuthContext"
+import { AuthProvider } from "./hooks/AuthContext.tsx"
 
 createRoot(document.getElementById("root")!).render(
     <AuthProvider>
