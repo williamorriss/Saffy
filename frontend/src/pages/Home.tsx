@@ -15,7 +15,6 @@ export function Home(): JSX.Element {
     return (
         <>
             <div className="relative left-1/2 w-4/5 bg-gray-800 -translate-x-1/2">
-                <button onClick={() => navigate("/issues/new")}>New Issue</button>
                 <IssueFeed />
             </div>
         </>
