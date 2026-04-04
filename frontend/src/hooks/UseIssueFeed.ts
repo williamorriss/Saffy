@@ -15,16 +15,6 @@ type QueryFilter = {
     issue_type: string | null;
 }
 
-export type UseIssueFeedReturn = {
-    issues: Issue[];
-    options: QueryFilter;
-    searchTerm: string;
-    isLoading: boolean;
-    setSearch: (searchTerm: string) => void;
-    updateFilter: (filter: Partial<QueryFilter>) => void;
-    refreshFeed: () => void;
-}
-
 const defaultQueryFilter: QueryFilter = {
     show_open: true,
     show_closed: false,
@@ -41,7 +31,7 @@ function getShow(options : QueryFilter): IssueQueryShow | undefined {
     return undefined;
 }
 
-export function useIssueFeed() : UseIssueFeedReturn {
+export function useIssueFeed() {
     const [issues, setIssues] = useState<Issue[]>([]);
     const [options, setOptions] = useState<QueryFilter>(defaultQueryFilter);
     const [searchTerm, setSearchTerm] = useState<string>("");

@@ -1,7 +1,10 @@
-import { type JSX, useState, useEffect } from "react";
+import { type JSX, } from "react";
 import type { Issue } from "../types/index";
-import type { UseIssueFeedReturn } from "../hooks/UseIssueFeed";
 import { useNavigate } from "react-router-dom";
+
+type IssueFeedProp = {
+    issues: Issue[]
+}
 
 function issuePanel({issue, navigate}: {issue: Issue, navigate: Function}): JSX.Element {
     return (
@@ -16,8 +19,7 @@ function issuePanel({issue, navigate}: {issue: Issue, navigate: Function}): JSX.
     );
 }
 
-export function IssueFeed({feedHook} : {feedHook: UseIssueFeedReturn}) : JSX.Element {
-    const { issues } = feedHook;
+export function IssueFeed({ issues } : IssueFeedProp) : JSX.Element {
     const navigate = useNavigate();
 
    const displayIssues = issues.length === 0
