@@ -52,14 +52,14 @@ export function Home(): JSX.Element {
                                   options={exampleIssueType.map((issueType, index) => ({ id: index.toString(), label: issueType, value: issueType }))}
                                   onSelect={(option) => feedHook.updateFilter({issue_type: option?.value})}
                                   placeholder="Issue Type"
-                                  searchPlaceholder="Search countries..."
+                                  searchPlaceholder="Search types..."
                                 />
 
                                 <SearchableDropdown 
                                   options={exampleLocationType.map((locationType, index) => ({ id: index.toString(), label: locationType, value: locationType }))}
                                   onSelect={(option) => feedHook.updateFilter({location: option?.value})}
                                   placeholder="Location"
-                                  searchPlaceholder="Search countries..."
+                                  searchPlaceholder="Search locations..."
                                 />
                             </nav>
                         </div>
