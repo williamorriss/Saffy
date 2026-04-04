@@ -1,4 +1,4 @@
-import { type JSX, useEffect, useState} from "react";
+import { type JSX, useEffect} from "react";
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../hooks/AuthContext";
 import { newIssueButton } from "../components/NewIssueButton";
@@ -65,8 +65,8 @@ export function Home(): JSX.Element {
                         </div>
                     </div>
 
-                    <SearchBar feedHook={feedHook} />
-                    <IssueFeed feedHook={feedHook} />
+                    <SearchBar searchTerm={feedHook.searchTerm} setSearch={feedHook.setSearch} refreshFeed={feedHook.refreshFeed} />
+                    <IssueFeed issues={feedHook.issues} />
                 </div>
             </div>
         </>

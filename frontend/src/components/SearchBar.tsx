@@ -1,7 +1,10 @@
-import type { UseIssueFeedReturn } from "../hooks/UseIssueFeed";
+type SearchBarProp = {
+    searchTerm: string;
+    setSearch: (searchTerm: string) => void;
+    refreshFeed: () => void;
+}
 
-export function SearchBar ( {feedHook} : {feedHook: UseIssueFeedReturn} ) {
-    const { searchTerm, setSearch, refreshFeed } = feedHook;
+export function SearchBar ( { searchTerm, setSearch, refreshFeed } : SearchBarProp) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
