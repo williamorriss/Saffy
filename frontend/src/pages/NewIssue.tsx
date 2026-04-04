@@ -108,25 +108,33 @@ export function NewIssue() {
     };
 
     return (
-        <form onSubmit={handleSubmit(submitNewIssue)}>
-            <DropDownWrapper options={exampleIssueType} control={control} name="issueType" placeholder="Issue Type"/>
-            <DropDownWrapper options={exampleLocationType} control={control} name="location " placeholder="Location" />
+        <>
+            <div className="relative w-4/5 mx-auto"> 
+                <div className="absolute inset-0 !bg-gray-800"> </div>
 
-            <div>
-                <input {...register("title")} placeholder="Subject" />
-                {errors.title && <span style={{ color: 'red' }}>{errors.title.message}</span>}
+                <div className="relative">
+                    <div className="w-full flex justify-left px-6 pb-0 pt-4 w-full">
+                        <form onSubmit={handleSubmit(submitNewIssue)} className="flex flex-col gap-4 p-4 w-full">
+                            <div className="flex flex-row w-full gap-4">
+                                <DropDownWrapper options={exampleIssueType} control={control} name="issueType" placeholder="Issue Type"/>
+                                <DropDownWrapper options={exampleLocationType} control={control} name="location " placeholder="Location" />
+                            </div>
+
+                            <div className="flex flex-col gap-4">
+                                <input {...register("title")} placeholder="Subject" className="w-full p-2 rounded bg-white text-black text-xl font-bold"/>
+                                {errors.title && <span style={{ color: 'red' }}>{errors.title.message}</span>}
+                                <textarea {...register("description")} rows={5} placeholder="Description" className="w-full p-2 rounded bg-white text-black"/>
+                                {errors.description && <span style={{ color: 'red' }}>{errors.description.message}</span>}
+                            </div>
+
+                            <div className="flex flex-row gap-4 items-center">
+                                <button type="submit">Submit</button>
+                                <p className="text-red-500">{localError}</p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-
-            <div>
-                <input {...register("description")} placeholder="Description" />
-                {errors.description && <span style={{ color: 'red' }}>{errors.description.message}</span>}
-            </div>
-
-            <div>
-                {localError && <span style={{ color: 'red' }}>{localError}</span>}
-            </div>
-
-            <button type="submit">Submit</button>
-        </form>
+        </>
     );
 }
