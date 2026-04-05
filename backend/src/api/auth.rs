@@ -1,4 +1,4 @@
-use crate::{AppError, AppState, ORIGIN};
+use crate::{error::AppError, AppState, ORIGIN};
 use anyhow::anyhow;
 use axum::{
     extract::{Path, Query, State},
@@ -16,7 +16,6 @@ use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 use std::collections::HashMap;
-use axum::routing::delete;
 use base64::prelude::*;
 
 const CAS_ORIGIN: &str = "https://auth.bath.ac.uk";
@@ -160,8 +159,6 @@ async fn cas_callback(
     let redirect_url = Url::parse(&redirect)
         .map_err(|_| AppError::BadRequest("Invalid URL".to_string()))?;
 
-    tracing::debug!("Found redirect: {}", redirect_url);
-
     let xml = get_cas_response(&redirect64, &query).await?;
     let username = parse_xml_response(&xml)?;
 
@@ -176,8 +173,7 @@ async fn cas_callback(
     session.insert("id", id).await?;
     session.save().await?;
 
-    let redirect_origin = Url::parse_with_params(redirect_url.as_str(), &[("auth", "true")])?;
-    Ok(Redirect::to(redirect_origin.as_str()))
+    Ok(Redirect::to(redirect_url.as_str()))
 }
 
 #[utoipa::path(

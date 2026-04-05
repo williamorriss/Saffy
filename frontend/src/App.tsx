@@ -34,8 +34,8 @@ function App() {
 
         <Routes>
           <Route path="/" element={<Home />} />
-            <Route path="/issues/new" element={<NewIssue />} />
-            <Route path="/issues/:issueID" element={<IssuePage/>}/>
+            <Route path="/api.issues/new" element={<NewIssue />} />
+            <Route path="/api.issues/:issueID" element={<IssuePage/>}/>
         </Routes>
       </>
   );
