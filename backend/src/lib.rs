@@ -10,8 +10,6 @@ use utoipauto::utoipauto;
 pub const PORT: u16 = 8000;
 pub const ADDRESS: &str = "127.0.0.1";
 
-// pub const ORIGIN: &str = "https://localhost:8000";
-
 pub const ORIGIN: &str = "http://localhost:8000";
 
 #[derive(Debug, Clone)]
