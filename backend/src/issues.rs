@@ -1,7 +1,5 @@
 pub mod search;
-
 use search::{IssueQuery, get_all_reports};
-
 use axum::extract::{Path, State};
 use axum::Json;
 use sqlx::{query_scalar, PgPool, Postgres, Transaction};
@@ -140,10 +138,6 @@ async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) ->
     let reports = get_all_reports(issue_id, &state.db).await?;
     Ok(Json(reports))
 }
-
-
-
-
 
 
 // #[utoipa::path(

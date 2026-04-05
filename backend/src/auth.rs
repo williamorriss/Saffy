@@ -16,6 +16,7 @@ use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 use std::collections::HashMap;
+use axum::routing::delete;
 use base64::prelude::*;
 
 const CAS_ORIGIN: &str = "https://auth.bath.ac.uk";
@@ -68,11 +69,12 @@ pub fn routes() -> OpenApiRouter<AppState> {
         .routes(routes!(login))
         .routes(routes!(cas_callback))
         .routes(routes!(get_session))
+        .routes(routes!(delete_user))
 }
 
 #[utoipa::path(
     get,
-    path = "/auth/login",
+    path = "/api/auth/login",
     responses(
         (status = 303, description = "Redirect to CAS auth"),
         (status = BAD_REQUEST, description = "Malformed URL redirect"),
@@ -84,8 +86,6 @@ pub fn routes() -> OpenApiRouter<AppState> {
 )]
 #[axum::debug_handler]
 pub async fn login(Query(query): Query<HashMap<String, String>>) -> Result<Redirect, AppError> {
-    tracing::info!("Executing POST /auth/login");
-
     let redirect = query.get("redirect")
         .ok_or_else(|| AppError::BadRequest("Malformed redirect Url".to_string()))?;
 
@@ -93,7 +93,7 @@ pub async fn login(Query(query): Query<HashMap<String, String>>) -> Result<Redir
 
     let cas_url = Url::parse_with_params(
         &format!("{CAS_ORIGIN}/login"),
-        &[("service", format!("{ORIGIN}/auth/cas/{redirect64}"))],
+        &[("service", format!("{ORIGIN}/api/auth/cas/{redirect64}"))],
     ).map_err(|e| AppError::Internal(e.into()))?;
 
     Ok(Redirect::to(cas_url.as_str()))
@@ -101,7 +101,7 @@ pub async fn login(Query(query): Query<HashMap<String, String>>) -> Result<Redir
 
 #[utoipa::path(
     get,
-    path = "/auth/logout",
+    path = "/api/auth/logout",
     responses(
         (status = 303, description = "Redirect to CAS logout"),
     )
@@ -118,7 +118,7 @@ pub async fn logout(
 
 #[utoipa::path(
     get,
-    path = "/auth/session",
+    path = "/api/auth/session",
     responses(
         (status = 200, description = "User", body = User),
         (status = NOT_FOUND, description = "User not found"),
@@ -129,13 +129,12 @@ async fn get_session(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
 ) -> Result<Json<User>, AppError> {
-    tracing::info!("Executing GET /auth/session");
     Ok(Json(get_user(session.id, &state.db).await.map_err(AppError::from)?))
 }
 
 #[utoipa::path(
     get,
-    path = "/auth/cas/{redirect64}",
+    path = "/api/auth/cas/{redirect64}",
     responses(
         (status = 301, description = "Redirect to redirect url"),
         (status = NOT_FOUND, description = "Auth ID not recognised"),
@@ -153,8 +152,6 @@ async fn cas_callback(
     session: TowerSession,
     State(state): State<AppState>,
 ) -> Result<Redirect, AppError> {
-    tracing::info!("Executing GET /auth/cas/{}", redirect64);
-
     let redirect = String::from_utf8(
         BASE64_URL_SAFE.decode(&redirect64)
             .map_err(|_| AppError::BadRequest("Invalid encoding".to_string()))?
@@ -176,7 +173,6 @@ async fn cas_callback(
         Err(err) => Err(AppError::DbError(err))?,
     };
 
-    tracing::info!("Session ID: {}", id);
     session.insert("id", id).await?;
     session.save().await?;
 
@@ -184,21 +180,30 @@ async fn cas_callback(
     Ok(Redirect::to(redirect_origin.as_str()))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/auth/delete",
+)]
+#[axum::debug_handler]
+async fn delete_user(
+    tower_session: TowerSession,
+    AuthSession(session): AuthSession,
+    State(state): State<AppState>,
+) -> Result<Redirect, AppError> {
+    query!(r#"DELETE FROM Users WHERE id = $1"#, session.id)
+        .execute(&state.db)
+        .await?;
+
+    tower_session.flush().await?;
+    Ok(Redirect::to(&format!("{CAS_ORIGIN}/logout")))
+}
+
 fn parse_xml_response(body: &str) -> Result<String, AppError> {
     #[derive(Debug, Deserialize)]
-    struct AuthenticationFailure {
-        #[serde(rename = "@code")]
-        _code: String,
-        #[serde(rename = "$text")]
-        message: String,
-    }
+    struct AuthenticationFailure { text: String }
 
     #[derive(Debug, Deserialize)]
-    struct AuthenticationSuccess {
-        user: String,
-        #[serde(rename = "proxyGrantingTicket")]
-        _ticket: Option<String>,
-    }
+    struct AuthenticationSuccess { user: String }
 
     #[derive(Debug, Deserialize)]
     #[serde(rename_all = "camelCase")]
@@ -212,9 +217,10 @@ fn parse_xml_response(body: &str) -> Result<String, AppError> {
     result.authentication_success.map_or_else(
         || result.authentication_failure.map_or_else(
             || Err(AppError::Internal(anyhow!("XML response parsed but not found"))),
-            |xml| Err(AppError::BadRequest(xml.message))),
+            |xml| Err(AppError::BadRequest(xml.text))),
         |res| Ok(res.user))
 }
+
 
 async fn get_user(id: Uuid, db: &PgPool) -> Result<User, sqlx::Error> {
     let result = query!(r#"SELECT id, username, created_at FROM users WHERE id = $1"#, id)
@@ -228,6 +234,7 @@ async fn get_user(id: Uuid, db: &PgPool) -> Result<User, sqlx::Error> {
     })
 }
 
+
 async fn get_cas_response(redirect64: &str, params: &HashMap<String, String>) -> Result<String, AppError> {
     let ticket = params.get("ticket")
         .ok_or_else(|| AppError::BadRequest("Missing ticket".to_string()))?;
@@ -235,12 +242,10 @@ async fn get_cas_response(redirect64: &str, params: &HashMap<String, String>) ->
     let cas_url = Url::parse_with_params(
         &format!("{CAS_ORIGIN}/serviceValidate"),
         &[
-            ("service", &format!("{ORIGIN}/auth/cas/{redirect64}")),
+            ("service", &format!("{ORIGIN}/api/auth/cas/{redirect64}")),
             ("ticket", ticket),
         ],
     )?;
-
-    tracing::debug!("CAS validate url: {}", cas_url.as_str());
 
     reqwest::Client::new()
         .get(cas_url)
