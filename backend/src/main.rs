@@ -66,8 +66,7 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
         .allow_credentials(true);
 
     let (router, api) = OpenApiRouter::with_openapi(backend::ApiDoc::openapi())
-        .merge(backend::auth::routes())
-        .merge(backend::issues::routes())
+        .merge(backend::api::routes())
         .split_for_parts();
 
     Ok(router

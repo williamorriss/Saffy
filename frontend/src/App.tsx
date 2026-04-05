@@ -41,7 +41,7 @@ function App() {
             </nav>
           </div>
         </div>
-        
+
 
         <div className="fixed top-0 left-0 w-full h-full pt-24 overflow-auto">
           <Routes>

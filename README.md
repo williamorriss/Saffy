@@ -5,13 +5,13 @@
 
 [Froom](https://froom.bathcs.com) is a great tool for finding a free room on campus. But is that automatic door working today?
 
-The goal of Knowle (name subject to change) is to make accessibility issues discoverable.
-The original Froom has recieved praise for its simple interface and accurate data, and this project aims to replicate that success for accessibility issues and faults impacting accessibility.
+The goal of Knowle (name subject to change) is to make accessibility api.issues discoverable.
+The original Froom has recieved praise for its simple interface and accurate data, and this project aims to replicate that success for accessibility api.issues and faults impacting accessibility.
 The primary focus is on physical accessibility but this scope could be extended in the future if this seems useful.
 
 ## Design
 
-There are two ways that data could be presented: by building/floor, and on a map. Some issues may simultaneously be in multiple buildings.
+There are two ways that data could be presented: by building/floor, and on a map. Some api.issues may simultaneously be in multiple buildings.
 
 Generating a map could use the data from the [Floor Plans project](https://gitlab.bath.ac.uk/pm2022/floor-plans), although it is likely that this code would need rewriting to be fully automated.
 The map data could also be crowdsourced. This would also solve an adjacent problem, relating to the navigability of campus. Some rooms are very hard to find, even for fully-sighted neurotypical students.
@@ -19,13 +19,13 @@ If map data is crowdsourced and structured effectively, this could facilitate a 
 While this is out of scope for this project, it should be considered in the database design.
 
 There should also be a button to launch the user's email client to email Campus Infrastructure with a template email, such that the user just has to fill out the details of the issue.
-Alternatively a direct reporting mechanism could be established, but this would be more work and run higher risks of security issues.
+Alternatively a direct reporting mechanism could be established, but this would be more work and run higher risks of security api.issues.
 
 ## Minimal Viable Product
 
 The initial release should:
 - support at least one data source
-- list accessibility issues in a user-centric view
+- list accessibility api.issues in a user-centric view
   - this will likely require categorization of issue type (e.g. broken lift or automatic door failure) and location (affected buildings or areas, e.g. 1 West or Parade)
 - be highly accessible to most users
   - accessibility must be improved in future releases based on feedback or consultation
@@ -63,6 +63,6 @@ I'm aiming for a name that's a pun on a nearby town, to match Froom
 Current ideas:
 
 - Knowle (know lifts and entrances/exits)
-- Notton (a pun on "not on", which can be interpreted either as the common state for the East Lift, or as a response to hearing about accessibility issues, i.e. "that's just not on")
+- Notton (a pun on "not on", which can be interpreted either as the common state for the East Lift, or as a response to hearing about accessibility api.issues, i.e. "that's just not on")
 - Something about Holt, a nearby village
 - Minster Way (a road near the sham castle; sounds like "min stairs way", i.e., a route that has no steps and therefore may be more accessible to wheelchair users)

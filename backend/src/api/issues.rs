@@ -2,8 +2,9 @@ pub mod search;
 use search::{IssueQuery, get_all_reports};
 use axum::extract::{Path, State};
 use axum::Json;
-use sqlx::{query_scalar, PgPool, Postgres, Transaction};
-use crate::{AppState, AuthSession};
+use sqlx::{query_scalar, Postgres, Transaction};
+use crate::api::auth::AuthSession;
+use crate::AppState;
 use utoipa_axum::routes;
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
@@ -16,7 +17,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct Report {
+pub struct ReportView {
     pub id: Uuid,
     pub issue_id: Uuid,
     pub reporter: Uuid,
@@ -52,7 +53,7 @@ pub struct CreateIssue {
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct Issue {
+pub struct IssueView {
     pub id: Uuid,
     pub title: Option<String>,
     pub description: Option<String>,
@@ -80,8 +81,6 @@ async fn post_issue(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
     Json(new_issue): Json<CreateIssue>) -> Result<StatusCode, AppError> {
-    tracing::info!("Executing POST /api/issues");
-    tracing::info!("Creating new issue: {:?}", new_issue);
     let mut transaction = state.db.begin().await?;
     let issue_id = make_issue(&mut transaction, &new_issue).await?;
     let _report_uuid = make_initial_report(&mut transaction, session.id, issue_id, &new_issue).await?;
@@ -110,16 +109,14 @@ async fn make_initial_report(transaction: &mut Transaction<'_, Postgres>, user_u
     path = "/api/issues",
     params(IssueQuery),
     responses(
-        (status = 200, description = "All issues", body = Vec<Issue>),
+        (status = 200, description = "All api.issues", body = Vec<IssueView>),
         (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
     ),
 )]
 #[axum::debug_handler]
-async fn get_issues(query: Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<Issue>>, AppError> {
-    tracing::info!("Executing GET /auth/issues\n{:?}", query.0);
+async fn get_issues(query: Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<IssueView>>, AppError> {
     // filters not implemented yet
     query.0.query(&state.db).await.map(Json)
-
 }
 
 #[utoipa::path(
@@ -129,12 +126,12 @@ async fn get_issues(query: Query<IssueQuery>, State(state): State<AppState>) -> 
         ("id" = Uuid, Path, description = "Issue uuid")
     ),
     responses(
-        (status = 200, description = "All reports for issue", body = Vec<Report>),
+        (status = 200, description = "All reports for issue", body = Vec<ReportView>),
         (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
     ),
 )]
 #[axum::debug_handler]
-async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) -> Result<Json<Vec<Report>>, AppError> {
+async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) -> Result<Json<Vec<ReportView>>, AppError> {
     let reports = get_all_reports(issue_id, &state.db).await?;
     Ok(Json(reports))
 }
@@ -142,7 +139,7 @@ async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) ->
 
 // #[utoipa::path(
 //     post,
-//     path = "/issues/{id}",
+//     path = "/api.issues/{id}",
 //     params(("id" = Uuid, Path, description = "Issue uuid")),
 //     request_body = CreateReport,
 //     responses(
@@ -152,7 +149,7 @@ async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) ->
 // )]
 // #[axum::debug_handler]
 // async fn post_report(AuthSession(session): AuthSession, State(state): State<AppState>, Path(issue_id): Path<Uuid>, Json(report): Json<CreateReport> ) -> Result<StatusCode, AppError> {
-//     tracing::info!("{}", format!("Executing POST /auth/issues/{issue_id}"));
+//     tracing::info!("{}", format!("Executing POST /auth/api.issues/{issue_id}"));
 //     let report_id = create_report(issue_id, session.id, report, &state.db).await?;
 //     tracing::debug!("Created report {:?}", report_id);
 //     Ok(StatusCode::CREATED)
