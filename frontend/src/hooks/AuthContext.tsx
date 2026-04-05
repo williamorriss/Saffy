@@ -1,6 +1,7 @@
 import {createContext, useContext, useEffect, useState} from 'react'
-import type { User } from "./types";
-import {client} from "./App";
+import type { User } from "../types";
+import {client} from "../App";
+import * as React from "react";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
