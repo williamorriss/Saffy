@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/issues": {
+    "/api/api.issues": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/issues/{id}": {
+    "/api/api.issues/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -181,7 +181,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description All issues */
+            /** @description All api.issues */
             200: {
                 headers: {
                     [name: string]: unknown;

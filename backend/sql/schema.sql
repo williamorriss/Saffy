@@ -1,21 +1,20 @@
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS users(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-\copy locations (name, description) FROM 'bath_locations.csv' DELIMITER ',' CSV HEADER;
 CREATE TABLE IF NOT EXISTS locations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     search_vector tsvector
         GENERATED ALWAYS AS (
-        to_tsvector('english',
-        coalesce(name, '')    || ' ' ||
-        coalesce(description, '')
+            to_tsvector('english',
+            coalesce(name, '')    || ' ' ||
+            coalesce(description, '')
         )
         ) STORED
 );
@@ -27,10 +26,10 @@ CREATE TABLE IF NOT EXISTS issues(
     location_id UUID REFERENCES locations(id),
     search_vector tsvector
         GENERATED ALWAYS AS (
-        to_tsvector('english',
-        coalesce(title, '')       || ' ' ||
-        coalesce(description, '')
-        )
+            to_tsvector('english',
+                coalesce(title, '')       || ' ' ||
+                coalesce(description, '')
+            )
         ) STORED
 );
 
@@ -55,4 +54,4 @@ CREATE INDEX location_fts_idx ON locations USING GIN(search_vector);
 -- trgm indices
 CREATE INDEX issue_trgm_title ON issues    USING GIN(title       gin_trgm_ops);
 CREATE INDEX issue_trgm_desc  ON issues    USING GIN(description gin_trgm_ops);
-CREATE INDEX loc_trgm_building ON locations USING GIN(building   gin_trgm_ops);
+CREATE INDEX loc_trgm_name ON locations USING GIN(name gin_trgm_ops);

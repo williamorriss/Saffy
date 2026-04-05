@@ -1,4 +1,4 @@
-use crate::{AppError, AppState, ORIGIN};
+use crate::{error::AppError, AppState, ORIGIN};
 use anyhow::anyhow;
 use axum::{
     extract::{Path, Query, State},
@@ -160,8 +160,6 @@ async fn cas_callback(
     let redirect_url = Url::parse(&redirect)
         .map_err(|_| AppError::BadRequest("Invalid URL".to_string()))?;
 
-    tracing::debug!("Found redirect: {}", redirect_url);
-
     let xml = get_cas_response(&redirect64, &query).await?;
     let username = parse_xml_response(&xml)?;
 
@@ -176,8 +174,25 @@ async fn cas_callback(
     session.insert("id", id).await?;
     session.save().await?;
 
-    let redirect_origin = Url::parse_with_params(redirect_url.as_str(), &[("auth", "true")])?;
-    Ok(Redirect::to(redirect_origin.as_str()))
+    Ok(Redirect::to(redirect_url.as_str()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/auth/delete",
+)]
+#[axum::debug_handler]
+async fn delete_user(
+    tower_session: TowerSession,
+    AuthSession(session): AuthSession,
+    State(state): State<AppState>,
+) -> Result<Redirect, AppError> {
+    query!(r#"DELETE FROM Users WHERE id = $1"#, session.id)
+        .execute(&state.db)
+        .await?;
+
+    tower_session.flush().await?;
+    Ok(Redirect::to(&format!("{CAS_ORIGIN}/logout")))
 }
 
 #[utoipa::path(
