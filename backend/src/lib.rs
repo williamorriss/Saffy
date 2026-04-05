@@ -1,10 +1,6 @@
-pub mod issues;
-pub mod auth;
-
 pub mod error;
+pub mod api;
 
-pub use auth::AuthSession;
-pub use error::AppError;
 use utoipauto::utoipauto;
 
 pub const PORT: u16 = 8000;

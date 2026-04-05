@@ -1,42 +1,39 @@
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE locations (
+CREATE TABLE IF NOT EXISTS locations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    latitude REAL,
-    longitude REAL,
-    building TEXT,
-    level INTEGER NOT NULL,
-    description TEXT,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
     search_vector tsvector
         GENERATED ALWAYS AS (
-        to_tsvector('english',
-        coalesce(building, '')    || ' ' ||
-        coalesce(description, '')
+            to_tsvector('english',
+            coalesce(name, '')    || ' ' ||
+            coalesce(description, '')
         )
         ) STORED
 );
 
-CREATE TABLE issues (
+CREATE TABLE IF NOT EXISTS issues(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT,
     description TEXT,
     location_id UUID REFERENCES locations(id),
     search_vector tsvector
         GENERATED ALWAYS AS (
-        to_tsvector('english',
-        coalesce(title, '')       || ' ' ||
-        coalesce(description, '')
-        )
+            to_tsvector('english',
+                coalesce(title, '')       || ' ' ||
+                coalesce(description, '')
+            )
         ) STORED
 );
 
-CREATE TABLE reports (
+CREATE TABLE IF NOT EXISTS reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     issue_id UUID NOT NULL REFERENCES issues(id),
     reporter_id UUID NOT NULL REFERENCES users(id),
@@ -57,4 +54,4 @@ CREATE INDEX location_fts_idx ON locations USING GIN(search_vector);
 -- trgm indices
 CREATE INDEX issue_trgm_title ON issues    USING GIN(title       gin_trgm_ops);
 CREATE INDEX issue_trgm_desc  ON issues    USING GIN(description gin_trgm_ops);
-CREATE INDEX loc_trgm_building ON locations USING GIN(building   gin_trgm_ops);
+CREATE INDEX loc_trgm_name ON locations USING GIN(name gin_trgm_ops);

@@ -35,7 +35,7 @@ const defaultQueryFilter: QueryFilter = {
 }
 
 
-function getShow(options): string {
+function getShow(options: QueryFilter): string {
     if (options.show_open && options.show_closed) return "all";
     if (options.show_open) return "open";
     if (options.show_closed) return "closed";
@@ -55,7 +55,7 @@ function SearchBar ({ setIssues, options } : SearchProps)  {
             return;
         }
 
-        const show = getShow(options);
+        const show = getShow(options.options);
         console.log(show);
         console.log(options);
 
@@ -66,8 +66,8 @@ function SearchBar ({ setIssues, options } : SearchProps)  {
                     query : {
                         search,
                         ordering,
-                        date_before: options.date_before,
-                        date_after: options.date_after,
+                        date_before: options.options.date_before,
+                        date_after: options.options.date_after,
                         show
                     },
                 },
