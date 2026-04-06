@@ -121,11 +121,11 @@ pub async fn logout(
     path = "/api/auth/session",
     responses(
         (status = 200, description = "User", body = User),
-        (status = NOT_FOUND, description = "User not found"),
+        (status = 404, description = "User not found"),
     )
 )]
 #[axum::debug_handler]
-async fn get_session(
+pub async fn get_session(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
 ) -> Result<Json<User>, AppError> {
@@ -146,7 +146,7 @@ async fn get_session(
     )
 )]
 #[axum::debug_handler]
-async fn cas_callback(
+pub async fn cas_callback(
     Path(redirect64): Path<String>,
     Query(query): Query<HashMap<String, String>>,
     session: TowerSession,
@@ -182,7 +182,7 @@ async fn cas_callback(
     path = "/api/auth/delete",
 )]
 #[axum::debug_handler]
-async fn delete_user(
+pub async fn delete_user(
     tower_session: TowerSession,
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
