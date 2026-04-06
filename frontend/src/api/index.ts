@@ -1,8 +1,8 @@
-import type { components } from "./types";
+import type { components } from "./api.d.ts";
 
 export type User = components["schemas"]["User"];
-export type Issue = components["schemas"]["IssueView"];
+export type Issue = components["schemas"]["Issue"];
 export type IssueQueryShow = components["schemas"]["IssueQueryShow"];
 export type CreateIssue = components["schemas"]["CreateIssue"];
-export type Report = components["schemas"]["ReportView"];
-
+export type Report = components["schemas"]["Report"];
+export type LocationView = components["schemas"]["LocationView"];

@@ -33,16 +33,6 @@ pub struct CreateReport {
     description: String,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct Location {
-    pub id: i32,
-    pub latitude: f32,
-    pub longitude: f32,
-    pub level: i32,
-    pub description: Option<String>,
-}
-
 #[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateIssue {
