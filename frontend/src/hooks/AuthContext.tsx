@@ -19,7 +19,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getSession = async () => {
         const { data, error } = await client.GET("/api/auth/session", {});
         if (error) {
-            console.error(error);
             setSession(null);
             return null;
         }

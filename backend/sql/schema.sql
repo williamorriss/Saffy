@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS locations (
         ) STORED
 );
 
+
 CREATE TABLE IF NOT EXISTS issues(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT,

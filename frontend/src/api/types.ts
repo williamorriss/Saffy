@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_locations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -141,16 +157,11 @@ export interface components {
             title?: string | null;
             description?: string | null;
         };
-        Location: {
-            /** Format: int32 */
-            id: number;
-            /** Format: float */
-            latitude: number;
-            /** Format: float */
-            longitude: number;
-            /** Format: int32 */
-            level: number;
-            description?: string | null;
+        LocationView: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
         };
         ReportView: {
             /** Format: uuid */
@@ -395,6 +406,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportView"][];
+                };
+            };
+            /** @description Could not make new issue */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_locations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All api.issues */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationView"][];
                 };
             };
             /** @description Could not make new issue */
