@@ -3,44 +3,58 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TABLE IF NOT EXISTS users(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS locations (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     name TEXT NOT NULL,
+     description TEXT NOT NULL,
+     search_vector tsvector
+         GENERATED ALWAYS AS (
+             to_tsvector('english',
+                         coalesce(name, '')    || ' ' ||
+                         coalesce(description, '')
+             )
+             ) STORED
+);
+
+CREATE TABLE IF NOT EXISTS issues (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     title TEXT,
+     description TEXT,
+     location_id UUID REFERENCES locations(id),
+     search_vector tsvector
+         GENERATED ALWAYS AS (
+             to_tsvector('english',
+                         coalesce(title, '')       || ' ' ||
+                         coalesce(description, '')
+             )
+             ) STORED
+);
+
+CREATE TABLE IF NOT EXISTS tags (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    search_vector tsvector
-        GENERATED ALWAYS AS (
-            to_tsvector('english',
-            coalesce(name, '')    || ' ' ||
-            coalesce(description, '')
-        )
-        ) STORED
+    name TEXT NOT NULL
 );
 
 
-CREATE TABLE IF NOT EXISTS issues(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT,
-    description TEXT,
-    location_id UUID REFERENCES locations(id),
-    search_vector tsvector
-        GENERATED ALWAYS AS (
-            to_tsvector('english',
-                coalesce(title, '')       || ' ' ||
-                coalesce(description, '')
-            )
-        ) STORED
+CREATE TABLE IF NOT EXISTS issue_tags (
+  issue_id UUID REFERENCES issues(id) ON DELETE CASCADE,
+  tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (issue_id, tag_id)
 );
 
-CREATE TABLE IF NOT EXISTS reports(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    issue_id UUID NOT NULL REFERENCES issues(id),
-    reporter_id UUID NOT NULL REFERENCES users(id),
-    description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    closed_at TIMESTAMP
+
+
+
+CREATE TABLE IF NOT EXISTS reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  issue_id UUID NOT NULL REFERENCES issues(id),
+  reporter_id UUID NOT NULL REFERENCES users(id),
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  closed_at TIMESTAMPTZ
 );
 
 CREATE INDEX idx_issues_location_id ON issues(location_id);

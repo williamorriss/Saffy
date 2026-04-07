@@ -1,6 +1,7 @@
 pub mod issues;
 pub mod auth;
 pub mod locations;
+mod tags;
 
 use utoipa_axum::router::OpenApiRouter;
 use issues::routes as issue_routes;

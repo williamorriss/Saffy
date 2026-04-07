@@ -9,27 +9,26 @@ use chrono::{DateTime, Utc};
 use http::{request::Parts};
 use quick_xml::de::from_str;
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, query, query_scalar};
+use sqlx::{PgPool, query_as, query, query_scalar};
 use tower_sessions::Session as TowerSession;
 use url::Url;
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 use std::collections::HashMap;
-use axum::routing::delete;
 use base64::prelude::*;
 
 const CAS_ORIGIN: &str = "https://auth.bath.ac.uk";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AuthSession(pub Session);
+pub struct AuthSession(pub UserSession);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Session { pub id: Uuid }
+pub struct UserSession { pub id: Uuid }
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct User {
+pub struct UserSchema {
     pub id: Uuid,
     pub username: String,
     pub created_at: DateTime<Utc>,
@@ -48,8 +47,6 @@ where
     type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        tracing::debug!("Authenticating user");
-
         TowerSession::from_request_parts(parts, state)
             .await
             .map_err(|_| AppError::Unauthorized("Failed to retrieve session".to_string()))?
@@ -59,7 +56,7 @@ where
             .flatten()
             .map_or_else(
                 || Err(AppError::Unauthorized("session error".to_string())),
-                |id| Ok(AuthSession(Session { id })))
+                |id| Ok(AuthSession(UserSession { id })))
     }
 }
 
@@ -120,7 +117,7 @@ pub async fn logout(
     get,
     path = "/api/auth/session",
     responses(
-        (status = 200, description = "User", body = User),
+        (status = 200, description = "User", body = UserSchema),
         (status = 404, description = "User not found"),
     )
 )]
@@ -128,8 +125,16 @@ pub async fn logout(
 pub async fn get_session(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
-) -> Result<Json<User>, AppError> {
-    Ok(Json(get_user(session.id, &state.db).await.map_err(AppError::from)?))
+) -> Result<Json<UserSchema>, AppError> {
+    query_as!(
+        UserSchema,
+        r#"SELECT id, username, created_at FROM users WHERE id = $1"#,
+        session.id
+    )
+        .fetch_one(&state.db)
+        .await
+        .map(Json)
+        .map_err(AppError::from)
 }
 
 #[utoipa::path(
@@ -217,20 +222,6 @@ fn parse_xml_response(body: &str) -> Result<String, AppError> {
             |xml| Err(AppError::BadRequest(xml.text))),
         |res| Ok(res.user))
 }
-
-
-async fn get_user(id: Uuid, db: &PgPool) -> Result<User, sqlx::Error> {
-    let result = query!(r#"SELECT id, username, created_at FROM users WHERE id = $1"#, id)
-        .fetch_one(db)
-        .await?;
-
-    Ok(User {
-        id: result.id,
-        username: result.username,
-        created_at: result.created_at.and_utc(),
-    })
-}
-
 
 async fn get_cas_response(redirect64: &str, params: &HashMap<String, String>) -> Result<String, AppError> {
     let ticket = params.get("ticket")
