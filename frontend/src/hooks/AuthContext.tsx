@@ -1,5 +1,5 @@
 import {createContext, useContext, useEffect, useState} from 'react'
-import type { User } from "../types";
+import type { User } from "../api";
 import {client} from "../App";
 import * as React from "react";
 

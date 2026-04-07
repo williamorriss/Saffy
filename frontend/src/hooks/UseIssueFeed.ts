@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type {Issue, IssueQueryShow} from "../types/index";
+import type {Issue, IssueQueryShow} from "../api/index";
 import { client } from "../App";
 import { DATE_START } from "../components/DateSlider";
 import { z } from "zod";

@@ -131,16 +131,16 @@ export interface components {
             issueId: string;
             description: string;
         };
-        Issue: {
+        /** @enum {string} */
+        IssueQueryOrder: "OldestFirst" | "NewestFirst" | "Relevance" | "RecentlyUpdated";
+        /** @enum {string} */
+        IssueQueryShow: "Open" | "Closed" | "All";
+        IssueView: {
             /** Format: uuid */
             id: string;
             title?: string | null;
             description?: string | null;
         };
-        /** @enum {string} */
-        IssueQueryOrder: "OldestFirst" | "NewestFirst" | "Relevance" | "RecentlyUpdated";
-        /** @enum {string} */
-        IssueQueryShow: "Open" | "Closed" | "All";
         Location: {
             /** Format: int32 */
             id: number;
@@ -152,7 +152,7 @@ export interface components {
             level: number;
             description?: string | null;
         };
-        Report: {
+        ReportView: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -329,13 +329,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description All issues */
+            /** @description All api.issues */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Issue"][];
+                    "application/json": components["schemas"]["IssueView"][];
                 };
             };
             /** @description Could not make new issue */
@@ -394,7 +394,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Report"][];
+                    "application/json": components["schemas"]["ReportView"][];
                 };
             };
             /** @description Could not make new issue */

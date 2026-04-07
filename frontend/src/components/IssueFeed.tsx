@@ -1,5 +1,5 @@
 import { type JSX, } from "react";
-import type { Issue } from "../types/index";
+import type { Issue } from "../api/index";
 import { useNavigate } from "react-router-dom";
 
 type IssueFeedProp = {

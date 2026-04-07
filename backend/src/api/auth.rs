@@ -195,24 +195,6 @@ async fn delete_user(
     Ok(Redirect::to(&format!("{CAS_ORIGIN}/logout")))
 }
 
-#[utoipa::path(
-    get,
-    path = "/api/auth/delete",
-)]
-#[axum::debug_handler]
-async fn delete_user(
-    tower_session: TowerSession,
-    AuthSession(session): AuthSession,
-    State(state): State<AppState>,
-) -> Result<Redirect, AppError> {
-    query!(r#"DELETE FROM Users WHERE id = $1"#, session.id)
-        .execute(&state.db)
-        .await?;
-
-    tower_session.flush().await?;
-    Ok(Redirect::to(&format!("{CAS_ORIGIN}/logout")))
-}
-
 fn parse_xml_response(body: &str) -> Result<String, AppError> {
     #[derive(Debug, Deserialize)]
     struct AuthenticationFailure { text: String }
