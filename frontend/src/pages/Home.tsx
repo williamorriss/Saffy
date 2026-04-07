@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useAuth } from "../hooks/AuthContext";
 import { newIssueButton } from "../components/NewIssueButton";
 import { IssueFeed } from "../components/IssueFeed";
-import { SearchBar } from "../components/SearchBar";
+import { InputBar } from "../components/InputBar";
 import { useIssueFeed } from "../hooks/UseIssueFeed";
 import { SearchableDropdown } from "../components/DropDown";
 
@@ -65,7 +65,7 @@ export function Home(): JSX.Element {
                         </div>
                     </div>
 
-                    <SearchBar searchTerm={feedHook.searchTerm} setSearch={feedHook.setSearch} refreshFeed={feedHook.refreshFeed} />
+                    <InputBar placeholder="Searching..." buttonText="Search" inputTerm={feedHook.searchTerm} setInput={feedHook.setSearch} onSubmit={feedHook.refreshFeed}/>
                     <IssueFeed issues={feedHook.issues} />
                 </div>
             </div>
