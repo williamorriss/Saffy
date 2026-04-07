@@ -1,5 +1,5 @@
 import { type JSX, useState, useEffect } from "react";
-import type {Issue, IssueQueryShow} from "../types/index";
+import type {Issue, IssueQueryShow} from "../api/index";
 import { client } from "../App";
 import { z } from "zod";
 import { DATE_START } from "./DateSlider";
