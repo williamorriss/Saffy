@@ -1,4 +1,4 @@
-import { useAuth } from "../hooks/AuthContext";
+import { useAuth } from "../../hooks/AuthContext.tsx";
 
 export function newIssueButton(navigate: Function) {
     const { isLoggedIn } = useAuth();

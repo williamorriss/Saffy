@@ -1,22 +1,15 @@
 import "./App.css";
 import { Routes, Route, Link } from 'react-router-dom';
-import type { paths } from "./types/api.d.ts";
-import createClient from "openapi-fetch";
-import { Home } from "./pages/Home";
-import { NewIssue } from "./pages/NewIssue";
-import {type JSX} from "react";
-import { useAuth } from "./hooks/AuthContext.tsx";
-import { IssuePage } from "./pages/IssuePage";
 
-// export const BACKEND_URL: string = "https://localhost:8000";
-export const BACKEND_URL: string = "http://localhost:8000";
-export const client
-    = createClient<paths>({ baseUrl: BACKEND_URL, credentials: "include" });
+import Home from "./pages/Home";
+import IssuePage from "./pages/IssuePage";
+import {type JSX} from "react";
+import useAuth from "./hooks/AuthContext.tsx";
+import NewIssue from "./pages/NewIssuePage/NewIssue.tsx";
 
 function loginLogoutLink() : JSX.Element {
   const className : string = "!bg-blue-500 text-white rounded-lg hover:!bg-blue-600 transition-colors cursor-pointer"
   const { isLoggedIn, login, logout} = useAuth();
-  console.log(isLoggedIn());
 
   if (!isLoggedIn()) {
     return <button onClick={login} className={className}> Login </button>
@@ -25,7 +18,7 @@ function loginLogoutLink() : JSX.Element {
   }
 }
 
-function App() {
+export default function App() {
   return (
       <>
         <div className="fixed top-0 left-0 right-0 h-16 bg-gray-800 flex items-center justify-between px-6 z-50">
@@ -53,6 +46,3 @@ function App() {
       </>
   );
 }
-
-
-export default App;

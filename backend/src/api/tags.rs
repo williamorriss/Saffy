@@ -1,6 +1,5 @@
 use axum::extract::State;
 use axum::Json;
-use rustls::quic::Tag;
 use serde::Serialize;
 use sqlx::query_as;
 use utoipa::ToSchema;
@@ -19,19 +18,19 @@ pub struct TagSchema {
 
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .routes(routes!(get_locations))
+        .routes(routes!(get_tags))
 }
 
 #[utoipa::path(
     get,
     path = "/api/tags",
     responses(
-        (status = 200, description = "All api.issues", body = Vec<TagSchema>),
-        (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
+        (status = 200, description = "All tags", body = Vec<TagSchema>),
+        (status = INTERNAL_SERVER_ERROR, description = "Could not fetch tags")
     ),
 )]
 #[axum::debug_handler]
-pub async fn get_locations(State(state): State<AppState>) -> Result<Json<Vec<TagSchema>>, AppError> {
+pub async fn get_tags(State(state): State<AppState>) -> Result<Json<Vec<TagSchema>>, AppError> {
     query_as!(TagSchema,
         r#"SELECT id, name FROM tags"#
     ).fetch_all(&state.db).await

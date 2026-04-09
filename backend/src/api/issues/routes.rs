@@ -13,8 +13,9 @@ use super::models::{IssueSchema, CreateIssue, IssueQuery, IssueQueryShow, IssueQ
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(get_issues))
-        .routes(routes!(get_issue, post_issue))
+        .routes(routes!(get_issue))
         .routes(routes!(post_report))
+        .routes(routes!(post_issue))
 }
 
 #[utoipa::path(
@@ -38,7 +39,7 @@ async fn post_issue(
         r#"INSERT INTO issues (title, description,  location_id) VALUES ($1, $2, $3) RETURNING id, title, location_id, description"#,
         new_issue.title,
         new_issue.description,
-        new_issue.location_uuid
+        new_issue.location_id
     ).fetch_one(transaction.as_mut()).await?;
 
     let report = query_as!(

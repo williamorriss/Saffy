@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type {Issue, IssueQueryShow} from "../api/index";
-import { client } from "../App";
+import { client, type Issue, type IssueQueryShow} from "../api";
 import { DATE_START } from "../components/DateSlider";
 import { z } from "zod";
 
@@ -76,7 +75,7 @@ export function useIssueFeed() {
     }
 
     const refreshFeed = useCallback(() => {
-        performSearch()
+        performSearch().then()
     }, [performSearch, searchTerm, options])
 
     return {

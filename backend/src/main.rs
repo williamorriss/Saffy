@@ -1,6 +1,15 @@
 use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
+use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
+use tower_http::{
+    cors::CorsLayer,
+    services::{ServeDir, ServeFile},
+    trace::TraceLayer,
+};
+use http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE, ACCEPT};
+use http::Method;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -20,6 +29,7 @@ async fn main() -> anyhow::Result<()> {
     let address = format!("{}:{}", backend::ADDRESS, backend::PORT).parse::<std::net::SocketAddr>()?;
 
     println!("Serving on {}", backend::ORIGIN);
+    println!("Documentation at {}/swagger-ui",backend::ORIGIN);
 
     //axum_server::bind_rustls(address, tls_config)
     axum_server::bind(address)
@@ -39,15 +49,6 @@ async fn make_db_connection() -> anyhow::Result<PgPool> {
 }
 
 fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
-    use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
-    use tower_http::{
-        cors::CorsLayer,
-        services::{ServeDir, ServeFile},
-        trace::TraceLayer,
-    };
-    use http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE, ACCEPT};
-    use http::Method;
-
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(true)
@@ -76,5 +77,6 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
         .fallback_service(
             ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")))
         .layer(cors)
-        .route("/openapi.json", axum::routing::get(move || async move { axum::Json(api)})))
+        .merge(SwaggerUi::new("/swagger-ui")
+            .url("/openapi.json", api)))
 }

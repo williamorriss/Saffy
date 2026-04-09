@@ -27,7 +27,7 @@ pub fn routes() -> OpenApiRouter<AppState> {
     path = "/api/locations",
     responses(
         (status = 200, description = "All api.issues", body = Vec<LocationSchema>),
-        (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
+        (status = INTERNAL_SERVER_ERROR, description = "Could not fetch tags")
     ),
 )]
 #[axum::debug_handler]

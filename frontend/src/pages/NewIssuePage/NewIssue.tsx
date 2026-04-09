@@ -1,10 +1,11 @@
-import { client } from "../App";
-import { useNavigate } from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { SearchableDropdown } from "../components/DropDown";
 import { useState } from "react";
+import {useDefaultData} from "../../hooks/UseDefaultData.ts";
+import { client, type Tag, type Location } from "../../api";
+import SearchableDropdown, { type DropdownOption, fromTag, fromLocation } from "../../components/SearchableDropdown";
 
 const CreateIssueSchema = z.object({
     title: z.string().nullable(),
@@ -15,30 +16,20 @@ const CreateIssueSchema = z.object({
 
 type CreateIssueForm = z.infer<typeof CreateIssueSchema>;
 
-const exampleIssueType: string[] = [
-    "Delay",
-    "Cancellation",
-    "Broken",
-    "Other",
-];
-const exampleLocationType : string[] = [
-    "Chancelor's Building",
-    "1W",
-    "2W",
-    "University Hall",
-    "Other"
-];
 
-const getSelectedOption = (value: string | null) => {
-    if (!value) return null;
-    const index = exampleIssueType.findIndex(type => type === value);
-    if (index === -1) return null;
+function getSelectedOption(options: DropdownOption[], value: string | null) : DropdownOption | null {
+    if (!value) {
+        return null;
+    }
+    const index = options.findIndex(option => option.label === value);
+    if (index === -1) {
+        return null;
+    }
     return {
         id: index.toString(),
         label: value,
-        value: value
     };
-};
+}
 
 const defaultValues: CreateIssueForm = {
     title: "",
@@ -48,26 +39,23 @@ const defaultValues: CreateIssueForm = {
 };
 
 interface DropDownWrapperProps {
-    options: string[],
+    options: DropdownOption[],
     control: any,
     name: string
-    placeholder: string
+    placeholder: string,
+    setValue: (value: any) => void
 }
 
-function DropDownWrapper({options, control, name, placeholder}: DropDownWrapperProps) {
+function DropDownWrapper({options, control, name, placeholder }: DropDownWrapperProps) {
     return (
         <Controller
             name={name}
             control={control}
             render={({ field }) => (
-                <SearchableDropdown 
-                    options={options.map((issueType, index) => ({ 
-                        id: index.toString(), 
-                        label: issueType, 
-                        value: issueType 
-                    }))}
-                    value={getSelectedOption(field.value)}
-                    onSelect={(option) => field.onChange(option?.value || "")}
+                <SearchableDropdown
+                    options={options}
+                    value={getSelectedOption(options, field.value)}
+                    onSelect={(option) => field.onChange(option?.label || "")}
                     placeholder={placeholder}
                     searchPlaceholder="Search..."
                 />
@@ -77,8 +65,12 @@ function DropDownWrapper({options, control, name, placeholder}: DropDownWrapperP
     
 }
 
-export function NewIssue() {
+export default function NewIssue() {
     const navigate = useNavigate();
+    const { locations, tags } = useDefaultData();
+
+    const [chosenLocation, setChosenLocation] = useState("");
+    const [chosenTags, setChosenTags] = useState<Tag[]>([])
     const [localError, setLocalError] = useState<string>("");
 
     const { handleSubmit, register, formState: { errors }, control,} = useForm<CreateIssueForm>({
@@ -98,8 +90,11 @@ export function NewIssue() {
             body: {
                 title: data.title,
                 description: data.description,
-                locationUuid: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                locationId: "",
             },
+            query: {
+                
+            }
         });
 
         if (!error) {
@@ -109,15 +104,16 @@ export function NewIssue() {
 
     return (
         <>
+            {localError}
             <div className="relative w-4/5 mx-auto"> 
-                <div className="absolute inset-0 !bg-gray-800"> </div>
+                <div className="absolute inset-0 bg-gray-800!"> </div>
 
                 <div className="relative">
-                    <div className="w-full flex justify-left px-6 pb-0 pt-4 w-full">
+                    <div className="flex justify-left px-6 pb-0 pt-4 w-full">
                         <form onSubmit={handleSubmit(submitNewIssue)} className="flex flex-col gap-4 p-4 w-full">
                             <div className="flex flex-row w-full gap-4">
-                                <DropDownWrapper options={exampleIssueType} control={control} name="issueType" placeholder="Issue Type"/>
-                                <DropDownWrapper options={exampleLocationType} control={control} name="location " placeholder="Location" />
+                                <DropDownWrapper options={tags.map(fromTag)} control={control} name="issueType" placeholder="Issue Type" setValue={setChosenTags}/>
+                                <DropDownWrapper options={locations.map(fromLocation)} control={control} name="location " placeholder="Location" setValue={setChosenLocation}/>
                             </div>
 
                             <div className="flex flex-col gap-4">
@@ -125,11 +121,6 @@ export function NewIssue() {
                                 {errors.title && <span style={{ color: 'red' }}>{errors.title.message}</span>}
                                 <textarea {...register("description")} rows={5} placeholder="Description" className="w-full p-2 rounded bg-white text-black"/>
                                 {errors.description && <span style={{ color: 'red' }}>{errors.description.message}</span>}
-                            </div>
-
-                            <div className="flex flex-row gap-4 items-center">
-                                <button type="submit">Submit</button>
-                                <p className="text-red-500">{localError}</p>
                             </div>
                         </form>
                     </div>

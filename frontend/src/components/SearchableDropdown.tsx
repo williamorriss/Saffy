@@ -1,23 +1,52 @@
 import { useState, useRef, useEffect } from 'react';
+import Fuse from 'fuse.js';
+import type {Tag, Location} from "../api";
 
-interface Option {
+function fuzzyRank(options: DropdownOption[], target: string) : DropdownOption[] {
+    const fuse = new Fuse(options, {
+        keys: ["label"],
+        includeScore: true,
+        threshold: 1.0,
+    });
+
+    return fuse
+        .search(target)
+        .sort((a, b) => (a.score ?? 1) - (b.score ?? 1))
+        .map(result => result.item);
+}
+
+export interface DropdownOption {
   id: string;
   label: string;
-  value: string;
+}
+
+
+export function fromTag(tag: Tag) : DropdownOption {
+    return {
+        id: tag.id,
+        label: tag.name,
+    }
+}
+
+export function fromLocation(location: Location) : DropdownOption {
+    return {
+        id: location.id,
+        label: location.name
+    }
 }
 
 interface SearchableDropdownProps {
-  options: Option[];
-  onSelect: (option: Option | null) => void;
+  options: DropdownOption[];
+  onSelect: (option: DropdownOption | null) => void;
   placeholder?: string;
   searchPlaceholder?: string;
-  value?: Option | null;
+  value?: DropdownOption | null;
 }
 
-export function SearchableDropdown({ options, onSelect, placeholder = "Select an option", searchPlaceholder = "Search...", value = null }: SearchableDropdownProps) {
+export default function SearchableDropdown({ options, onSelect, placeholder = "Select an option", searchPlaceholder = "Search...", value = null }: SearchableDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [internalSelectedOption, setInternalSelectedOption] = useState<Option | null>(value);
+  const [internalSelectedOption, setInternalSelectedOption] = useState<DropdownOption | null>(value);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync with external value prop
@@ -25,10 +54,10 @@ export function SearchableDropdown({ options, onSelect, placeholder = "Select an
     setInternalSelectedOption(value);
   }, [value]);
 
-  // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Rank options based on search term
+  const rankedOptions = searchTerm == ""
+    ? options.sort((a,b) => a.label.localeCompare(b.label))
+    : fuzzyRank(options, searchTerm)
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -43,7 +72,7 @@ export function SearchableDropdown({ options, onSelect, placeholder = "Select an
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (option: Option) => {
+  const handleSelect = (option: DropdownOption) => {
     setInternalSelectedOption(option);
     onSelect(option);
     setIsOpen(false);
@@ -117,8 +146,8 @@ export function SearchableDropdown({ options, onSelect, placeholder = "Select an
                 }
               `}
             </style>
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
+            {rankedOptions.length > 0 ? (
+              rankedOptions.map((option) => (
                 <button
                   key={option.id}
                   onClick={() => handleSelect(option)}
