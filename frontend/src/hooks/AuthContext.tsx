@@ -1,6 +1,5 @@
 import {createContext, useContext, useEffect, useState} from 'react'
-import type { User } from "../api";
-import {client} from "../App";
+import { client, type User } from "../api";
 import * as React from "react";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -17,7 +16,7 @@ interface AuthContextType {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [session, setSession] = useState<User | null>(null);
     const getSession = async () => {
-        const { data, error } = await client.GET("/api/auth/session", {});
+        const { data, error } = await client.GET("/api/auth/session", {} as any);
         if (error) {
             setSession(null);
             return null;
@@ -55,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-export const useAuth = () => {
+export default function useAuth() : AuthContextType {
     const context = useContext(AuthContext);
     if (!context) {
         throw new Error("Context was null");

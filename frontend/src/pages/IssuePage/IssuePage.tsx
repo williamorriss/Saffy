@@ -1,9 +1,8 @@
 import { useParams } from 'react-router-dom';
 import { type JSX, useState, useEffect } from "react";
-import type { Report, Issue } from "../api/index";
-import { client } from "../App";
-import { DATE_START } from "../components/DateSlider";
-import { InputBar } from '../components/InputBar';
+import { client, type Issue } from "../../api";
+import { DATE_START } from "../../components/DateSlider";
+import { MessageBar } from '../../components/MessageBar';
 
 type NewReportType = {
     id: number,
@@ -47,9 +46,12 @@ const fetchIssue = async (id: Issue["id"], setIssue: (issue: Issue | undefined) 
             }
         }
     })
-    if(!data) return;
-    const target: Issue[] = data.filter((issue: { id: string; }) => issue.id == id);
-    if(target.length != 0) setIssue(target[0]);
+    if (data) {
+        const target: Issue[] = data.filter((issue: Issue) => issue.id == id);
+        if(target.length != 0) {
+            setIssue(target[0]);
+        }
+    }
 }
 
 export function IssuePage() {
@@ -98,8 +100,8 @@ export function IssuePage() {
                         <p className="text-lg font-bold !text-black">Reports:</p>
                         <p className="text-sm text-gray-600 italic opacity-50">{reports.length} found</p>
                     </div>
-                    <div className="w-full items-center">
-                        <InputBar placeholder="Write report..." buttonText="Submit" inputTerm={message} setInput={setMessage} onSubmit={submitMessage} />
+                    <div className="w-full items-center pb-4">
+                        <MessageBar message={message} setMessage={setMessage} submit={submitMessage}/>
                     </div>
                     {displayReports}
                 </div>

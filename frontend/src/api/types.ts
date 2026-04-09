@@ -132,6 +132,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/issues/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["post_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -140,43 +172,52 @@ export interface components {
             title?: string | null;
             description?: string | null;
             /** Format: uuid */
-            locationUuid: string;
+            locationId: string;
+        };
+        CreateIssueResponse: {
+            report: components["schemas"]["ReportSchema"];
+            issue: components["schemas"]["IssueSchema"];
         };
         CreateReport: {
-            /** Format: uuid */
-            issueId: string;
             description: string;
         };
         /** @enum {string} */
         IssueQueryOrder: "OldestFirst" | "NewestFirst" | "Relevance" | "RecentlyUpdated";
         /** @enum {string} */
         IssueQueryShow: "Open" | "Closed" | "All";
-        IssueView: {
+        IssueSchema: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            locationId?: string | null;
             title?: string | null;
             description?: string | null;
         };
-        LocationView: {
+        LocationSchema: {
             /** Format: uuid */
             id: string;
             name: string;
             description: string;
         };
-        ReportView: {
+        ReportSchema: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             issueId: string;
             /** Format: uuid */
-            reporter: string;
+            reporterId: string;
             description?: string | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             closedAt?: string | null;
         };
-        User: {
+        TagSchema: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        UserSchema: {
             /** Format: uuid */
             id: string;
             username: string;
@@ -312,7 +353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["UserSchema"];
                 };
             };
             /** @description User not found */
@@ -346,7 +387,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IssueView"][];
+                    "application/json": components["schemas"]["IssueSchema"][];
                 };
             };
             /** @description Could not make new issue */
@@ -376,7 +417,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CreateIssueResponse"];
+                };
             };
             /** @description Failed to create new issue */
             500: {
@@ -405,7 +448,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReportView"][];
+                    "application/json": components["schemas"]["ReportSchema"][];
                 };
             };
             /** @description Could not make new issue */
@@ -432,10 +475,71 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LocationView"][];
+                    "application/json": components["schemas"]["LocationSchema"][];
                 };
             };
-            /** @description Could not make new issue */
+            /** @description Could not fetch tags */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagSchema"][];
+                };
+            };
+            /** @description Could not fetch tags */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    post_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Issue uuid */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReport"];
+            };
+        };
+        responses: {
+            /** @description Created new report */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportSchema"];
+                };
+            };
+            /** @description Failed to create new report */
             500: {
                 headers: {
                     [name: string]: unknown;

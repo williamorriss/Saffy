@@ -22,7 +22,7 @@ pub struct IssueSchema {
 pub struct CreateIssue {
     pub title: Option<String>,
     pub description: Option<String>,
-    pub location_uuid: Uuid,
+    pub location_id: Uuid,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
