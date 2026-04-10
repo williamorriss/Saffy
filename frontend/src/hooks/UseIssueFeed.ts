@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const SearchSchema = z.object({search : z.string().default("")});
 
-type QueryFilter = {
+export type QueryFilter = {
     show_open: boolean;
     show_closed: boolean;
     date_before: number | null;
@@ -30,7 +30,17 @@ function getShow(options : QueryFilter): IssueQueryShow | undefined {
     return undefined;
 }
 
-export function useIssueFeed() {
+export type Feed = {
+    issues: Issue[];
+    options: QueryFilter;
+    search: string;
+    isLoading: boolean;
+    setSearch: (searchTerm: string) => void;
+    updateFilter: (filter: Partial<QueryFilter>) => void;
+    refreshFeed: () => void;
+}
+
+export default function useIssueFeed() : Feed {
     const [issues, setIssues] = useState<Issue[]>([]);
     const [options, setOptions] = useState<QueryFilter>(defaultQueryFilter);
     const [searchTerm, setSearchTerm] = useState<string>("");
@@ -81,7 +91,7 @@ export function useIssueFeed() {
     return {
         issues,
         options,
-        searchTerm,
+        search: searchTerm,
         isLoading,
         setSearch,
         updateFilter,

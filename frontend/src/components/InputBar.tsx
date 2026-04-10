@@ -1,6 +1,3 @@
-import { type JSX} from "react";
-import * as React from "react";
-
 
 interface SearchBarProps {
     search: string,

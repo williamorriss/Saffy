@@ -39,7 +39,7 @@ export default function App() {
         <div className="fixed top-0 left-0 w-full h-full pt-24 overflow-auto">
           <Routes>
             <Route path="/" element={<Home />} />
-              <Route path="/issues/new" element={<NewIssue />} />
+              {/*<Route path="/issues/new" element={<NewIssue />} />*/}
               <Route path="/issues/:issueID" element={<IssuePage/>}/>
           </Routes>
         </div>
