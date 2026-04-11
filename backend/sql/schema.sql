@@ -7,16 +7,18 @@ CREATE TABLE IF NOT EXISTS users(
 );
 
 CREATE TABLE IF NOT EXISTS locations (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     name TEXT NOT NULL,
-     description TEXT NOT NULL,
-     search_vector tsvector
-         GENERATED ALWAYS AS (
-             to_tsvector('english',
-                         coalesce(name, '')    || ' ' ||
-                         coalesce(description, '')
-             )
-             ) STORED
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    department TEXT NOT NULL,
+    url TEXT NOT NULL,
+    description TEXT NOT NULL,
+    search_vector tsvector
+     GENERATED ALWAYS AS (
+         to_tsvector('english',
+                     coalesce(name, '')    || ' ' ||
+                     coalesce(description, '')
+         )
+         ) STORED
 );
 
 CREATE TABLE IF NOT EXISTS issues (
@@ -44,8 +46,6 @@ CREATE TABLE IF NOT EXISTS issue_tags (
   tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
   PRIMARY KEY (issue_id, tag_id)
 );
-
-
 
 
 CREATE TABLE IF NOT EXISTS reports (
