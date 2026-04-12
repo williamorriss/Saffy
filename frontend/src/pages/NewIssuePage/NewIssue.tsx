@@ -23,7 +23,6 @@ const defaultValues: CreateIssueForm = {
 };
 
 interface DropDownWrapperProps {
-    options: Location[],
     control: any,
     name: string
     placeholder: string,
@@ -52,7 +51,7 @@ export default function NewIssue() {
     const [location, setLocation] = useState<Location|null>(null);
     const [tags, setTags] = useState<Tag[]>([])
     const [localError, setLocalError] = useState<string>("");
-    const [tagSelectionVisible, setTagSelectionVisible] = useState(false);
+    const [tagSelectionVisible, setTagSelectionVisible] = useState(true);
 
     const { handleSubmit, register, formState: { errors }, control,} = useForm<CreateIssueForm>({
         resolver: zodResolver(CreateIssueSchema),
@@ -73,9 +72,7 @@ export default function NewIssue() {
                 description: data.description,
                 locationId: location?.id,
             },
-            query: {
-
-            }
+            query: { tags }
         });
 
         if (!error) {
@@ -104,7 +101,7 @@ export default function NewIssue() {
                                 <textarea {...register("description")} rows={5} placeholder="Description" className="w-full p-2 rounded bg-white text-black"/>
                                 {errors.description && <span style={{ color: 'red' }}>{errors.description.message}</span>}
                             </div>
-                            <button type="submit">Submit</button>
+                            <button ></button>
                         </form>
                     </div>
                 </div>

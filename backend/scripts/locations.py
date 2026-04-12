@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
+url = "https://search.bath.ac.uk/s/search.json?collection=bath~sp-cms-production-locations&num_ranks=130"
 
 def load_from_json() -> list[dict[str,str]]:
     with open("locations.json") as locations_json:
