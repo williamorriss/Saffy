@@ -15,6 +15,8 @@ pub struct LocationSchema {
     id: Uuid,
     name: String,
     description: String,
+    department: String,
+    url: String
 }
 
 pub fn routes() -> OpenApiRouter<AppState> {
@@ -33,7 +35,7 @@ pub fn routes() -> OpenApiRouter<AppState> {
 #[axum::debug_handler]
 pub async fn get_locations(State(state): State<AppState>) -> Result<Json<Vec<LocationSchema>>, AppError> {
     query_as!(LocationSchema,
-        r#"SELECT id, name, description FROM locations"#
+        r#"SELECT id, name, description, department, url FROM locations"#
     ).fetch_all(&state.db).await
         .map(Json)
         .map_err(AppError::from)

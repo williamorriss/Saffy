@@ -23,9 +23,9 @@ CREATE TABLE IF NOT EXISTS locations (
 
 CREATE TABLE IF NOT EXISTS issues (
      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     title TEXT,
-     description TEXT,
-     location_id UUID REFERENCES locations(id),
+     title TEXT NOT NULL,
+     description TEXT NOT NULL,
+     location_id UUID REFERENCES locations(id), -- can be nullable
      search_vector tsvector
          GENERATED ALWAYS AS (
              to_tsvector('english',
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS issues (
 
 CREATE TABLE IF NOT EXISTS tags (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL
+    name TEXT UNIQUE NOT NULL
 );
 
 

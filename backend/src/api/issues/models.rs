@@ -20,10 +20,17 @@ pub struct IssueSchema {
 #[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateIssue {
-    pub title: Option<String>,
-    pub description: Option<String>,
-    pub location_id: Uuid,
+    pub title: String,
+    pub description: String,
+    pub location_id: Option<Uuid>,
 }
+
+#[derive(Deserialize)]
+pub struct CreateIssueParams {
+    #[serde(default)]
+    pub tags: Vec<String>,
+}
+
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -34,8 +41,7 @@ pub struct CreateIssueResponse {
 
 #[derive(Debug, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query, rename_all = "camelCase")]
-#[serde(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct IssueQuery {
     pub search: Option<String>,
     #[param(required = false)]

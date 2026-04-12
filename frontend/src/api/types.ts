@@ -169,10 +169,10 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         CreateIssue: {
-            title?: string | null;
-            description?: string | null;
+            title: string;
+            description: string;
             /** Format: uuid */
-            locationId: string;
+            locationId?: string | null;
         };
         CreateIssueResponse: {
             report: components["schemas"]["ReportSchema"];
@@ -198,6 +198,8 @@ export interface components {
             id: string;
             name: string;
             description: string;
+            department: string;
+            url: string;
         };
         ReportSchema: {
             /** Format: uuid */

@@ -5,6 +5,7 @@ export type User = components["schemas"]["UserSchema"];
 export type Issue = components["schemas"]["IssueSchema"];
 export type IssueQueryShow = components["schemas"]["IssueQueryShow"];
 export type CreateIssue = components["schemas"]["CreateIssue"];
+export type CreateReport = components["schemas"]["CreateReport"];
 export type Report = components["schemas"]["ReportSchema"];
 export type Location = components["schemas"]["LocationSchema"];
 export type Tag = components["schemas"]["TagSchema"];
