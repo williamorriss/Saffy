@@ -143,7 +143,6 @@ export default function LocationSearch({
                                     }`}
                                 >
                                     {option.name}
-                                    {option.description}
                                 </button>
                             ))
                         ) : (
