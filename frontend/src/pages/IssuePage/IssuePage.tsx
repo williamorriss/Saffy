@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { type JSX, useState, useEffect } from "react";
-import { client, type Issue } from "../../api";
+import { client, type Issue, type Report, type CreateReport } from "../../api";
 import { DATE_START } from "../../components/DateSlider";
 import { MessageBar } from '../../components/MessageBar';
 
@@ -33,17 +33,15 @@ function reportPanel(report: NewReportType): JSX.Element {
 
 }
 
-// Bad fetch for now until we get better endpoints, one should get the a single issue by id and the others should have a post reports and fetch all reports give Issue ID
-const fetchIssue = async (id: Issue["id"], setIssue: (issue: Issue | undefined) => void) => {
-    const {data} = await client.GET("/api/issues", {
+// Bad fetch for now until we get better endpoints, one should get the single issue by id and the others should have a post reports and fetch all reports give Issue ID
+const fetchIssue = async (id: string, setIssue: (issue: Issue | undefined) => void) => {
+    const {data} = await client.GET("/api/issues/{id}", {
         params: {
             query: {
                 search: "",
-                ordering: "NewestFirst",
-                date_before: DATE_START,
-                date_after: Date.now(),
                 show: "All"
-            }
+            },
+            path: {id: id}
         }
     })
     if (data) {
@@ -55,7 +53,7 @@ const fetchIssue = async (id: Issue["id"], setIssue: (issue: Issue | undefined) 
 }
 
 export function IssuePage() {
-    const [reports, setReports] = useState<NewReportType[]>(reportExampleData);
+    const [reports, setReports] = useState<CreateReport[]>([]);
     const [issue, setIssue] = useState<Issue>();
     const [message, setMessage] = useState("");
     const { issueID } = useParams();
@@ -63,7 +61,7 @@ export function IssuePage() {
     useEffect(() => {
         if (!issueID) return;
 
-        fetchIssue(issueID, setIssue);
+        fetchIssue(issueID, setIssue).then();
 
         // Fetch reports
     }, []);

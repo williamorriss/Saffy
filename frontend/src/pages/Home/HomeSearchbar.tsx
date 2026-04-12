@@ -1,22 +1,15 @@
 import type { Tag, Location } from "../../api";
 import { type JSX, useState } from "react";
-import { useDefaultData } from "../../hooks/UseDefaultData.ts";
 // set search Params
 import LocationSearch from "../../components/LocationSearch.tsx";
 import type { Feed } from "../../hooks/UseIssueFeed";
 import { X, Search } from "lucide-react";
+import { TagSelectionBox, TagDisplay } from "../../components/TagFilter.tsx";
 
 export default function HomeSearchbar({ feed: { search, setSearch } }: { feed: Feed }) {
-    const { tags } = useDefaultData();
     const [location, setLocation] = useState<Location|null>(null)
     const [tagSelectionVisible, setTagSelectionVisible] = useState(false);
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-
-    const addTag = (tag: Tag) => setSelectedTags([...selectedTags, tag]);
-    const removeTag = (tag: Tag) => setSelectedTags(selectedTags.filter((t: Tag) => t.id !== tag.id));
-    const toggleTag = (tag: Tag) => includesTag(tag) ? removeTag(tag) : addTag(tag);
-    const includesTag = (tag: Tag) => selectedTags.some(t => t.id === tag.id);
-    const clearTags = () => setSelectedTags([]);
 
     return (
         <div className="w-full px-6 p-4">
@@ -38,16 +31,10 @@ export default function HomeSearchbar({ feed: { search, setSearch } }: { feed: F
                     </div>
                 </div>
 
-                <TagDisplay selected={selectedTags} removeTag={removeTag} />
+                <TagDisplay tags={selectedTags} setTags={setSelectedTags} />
 
                 <div>
-                    <TagSelectionBox
-                        tags={tags}
-                        visible={tagSelectionVisible}
-                        toggleTag={toggleTag}
-                        clearTags={clearTags}
-                        includesTag={includesTag}
-                    />
+                    <TagSelectionBox visible={tagSelectionVisible} selectedTags={selectedTags} setSelectedTags={setSelectedTags} />
                 </div>
             </div>
         </div>
@@ -79,58 +66,4 @@ function SearchInput({ search, setSearch }: { search: string, setSearch: (val: s
             )}
         </div>
     );
-}
-
-function TagDisplay({ selected, removeTag }: { selected: Tag[], removeTag: (tag: Tag) => void }): JSX.Element {
-    if (selected.length === 0) return <></>;
-    return (
-        <div className="flex flex-wrap gap-2">
-            {selected.map((tag) => (
-                <button
-                    key={tag.id}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-base rounded-full border border-blue-200 hover:bg-blue-100 transition-colors"
-                    onClick={() => removeTag(tag)}
-                >
-                    {tag.name} <X size={14} />
-                </button>
-            ))}
-        </div>
-    );
-}
-
-function TagSelectionBox({ tags, visible, toggleTag, clearTags, includesTag }: TagSelectionBoxProps): JSX.Element {
-    if (!visible) return <></>;
-    return (
-        <div className="p-4 border rounded-xl bg-gray-50 shadow-sm border-gray-200">
-            <div className="flex justify-between items-center mb-4">
-                <button onClick={clearTags} className="text-xs right-3 text-blue-600 hover:text-blue-800 font-medium">Clear All</button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => {
-                    const isSelected = includesTag(tag);
-                    return (
-                        <button
-                            key={tag.id}
-                            className={`px-4 py-1.5 rounded-full text-sm border transition-all ${
-                                isSelected
-                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                    : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                            }`}
-                            onClick={() => toggleTag(tag)}
-                        >
-                            {tag.name}
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
-
-interface TagSelectionBoxProps {
-    tags: Tag[];
-    visible: boolean;
-    toggleTag: (tag: Tag) => void;
-    clearTags: () => void;
-    includesTag: (tag: Tag) => boolean;
 }

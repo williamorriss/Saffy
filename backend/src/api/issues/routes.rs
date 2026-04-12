@@ -1,6 +1,6 @@
 use axum::extract::{Path, State};
 use axum::Json;
-use sqlx::{query_as, query_file_as};
+use sqlx::{query, query_as, query_file_as};
 use crate::api::auth::AuthSession;
 use crate::AppState;
 use utoipa_axum::routes;
@@ -8,7 +8,7 @@ use axum::extract::Query;
 use utoipa_axum::router::OpenApiRouter;
 use crate::error::AppError;
 use uuid::Uuid;
-use super::models::{IssueSchema, CreateIssue, IssueQuery, IssueQueryShow, IssueQueryOrder, ReportSchema, CreateIssueResponse, CreateReport};
+use super::models::{IssueSchema, CreateIssue, IssueQuery, IssueQueryShow, IssueQueryOrder, ReportSchema, CreateIssueResponse, CreateReport, CreateIssueParams};
 
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
@@ -31,9 +31,25 @@ pub fn routes() -> OpenApiRouter<AppState> {
 async fn post_issue(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
+    Query(params): Query<CreateIssueParams>,
     Json(new_issue): Json<CreateIssue>
 ) -> Result<Json<CreateIssueResponse>, AppError> {
     let mut transaction = state.db.begin().await?;
+
+    let tags = params.tags;
+    let bad_tag_rows = query!(r#"
+        SELECT name FROM unnest($1::text[]) AS v(name)
+        EXCEPT SELECT name FROM tags
+    "#, &tags[..]).fetch_all(transaction.as_mut()).await?;
+
+    if !bad_tag_rows.is_empty() {
+        let bad_tags = bad_tag_rows
+            .into_iter()
+            .map(|row| row.name.unwrap_or("".to_string()))
+            .collect::<Vec<String>>().join(", ");
+        return Err(AppError::BadRequest(format!("Bad request, did not recognise tags: {bad_tags}")))
+    }
+
     let issue = query_as!(
         IssueSchema,
         r#"INSERT INTO issues (title, description,  location_id) VALUES ($1, $2, $3) RETURNING id, title, location_id, description"#,
@@ -41,6 +57,15 @@ async fn post_issue(
         new_issue.description,
         new_issue.location_id
     ).fetch_one(transaction.as_mut()).await?;
+
+    query!(r#"
+        WITH tag_ids AS (SELECT id FROM tags WHERE name = ANY($1::text[]))
+        INSERT INTO issue_tags(issue_id, tag_id)
+        SELECT $2, id FROM tag_ids
+        "#,
+        &tags[..],
+        issue.id
+    ).execute(transaction.as_mut()).await?;
 
     let report = query_as!(
         ReportSchema,
