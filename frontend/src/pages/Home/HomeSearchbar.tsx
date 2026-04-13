@@ -1,47 +1,63 @@
-import type { Tag, Location } from "../../api";
-import { type JSX, useState } from "react";
+import {type IssueQuery, type Issue, client} from "../../api";
+import {type JSX , useState} from "react";
 // set search Params
 import LocationSearch from "../../components/LocationSearch.tsx";
-import type { Feed } from "../../hooks/UseIssueFeed";
 import { X, Search } from "lucide-react";
 import { TagSelectionBox, TagDisplay } from "../../components/TagFilter.tsx";
 
-export default function HomeSearchbar({ feed: { search, setSearch } }: { feed: Feed }) {
-    const [location, setLocation] = useState<Location|null>(null)
+const defaultQuery: IssueQuery = {
+    search: undefined,
+    show: undefined,
+    location: undefined,
+    dateAfter: undefined,
+    dateBefore: undefined,
+    ordering: undefined,
+    tags: []
+}
+
+export default function HomeSearchbar({setIssues} : {setIssues: (issues: Issue[]) => void}) {
+    const [query, setQuery] = useState<IssueQuery>(defaultQuery);
     const [tagSelectionVisible, setTagSelectionVisible] = useState(false);
-    const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+
+    const search = async (_: FormData) => {
+        setIssues(await fetchIssues(query))
+    }
 
     return (
-        <div className="w-full px-6 p-4">
+        <form className="w-full px-6 p-4" action={search} >
             <div className="flex flex-col gap-4" tabIndex={-1}>
                 <div className="flex items-center gap-3">
                     <div className="flex-1 w-full max-w-md">
-                        <SearchInput search={search} setSearch={setSearch} />
+                        <SearchInput query={query} setQuery={setQuery} />
+                        <button type={"submit"}> BUTTON </button>
                     </div>
 
                     <button
                         className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg whitespace-nowrap text-sm font-medium transition-colors"
+                        type = "button"
                         onClick={() => setTagSelectionVisible(!tagSelectionVisible)}
                     >
                         Tags
                     </button>
 
                     <div>
-                        <LocationSearch onSelect={setLocation} />
+                        <LocationSearch onSelect={(locationId: string | undefined) => {setQuery({...query, location: locationId})}} />
                     </div>
                 </div>
 
-                <TagDisplay tags={selectedTags} setTags={setSelectedTags} />
+                <TagDisplay query={query} setQuery={setQuery} />
 
                 <div>
-                    <TagSelectionBox visible={tagSelectionVisible} selectedTags={selectedTags} setSelectedTags={setSelectedTags} />
+                    <TagSelectionBox visible={tagSelectionVisible} query={query} setQuery={setQuery} />
                 </div>
             </div>
-        </div>
+        </form>
     );
 }
 
-function SearchInput({ search, setSearch }: { search: string, setSearch: (val: string) => void }): JSX.Element {
+function SearchInput({ query, setQuery }: { query: IssueQuery, setQuery: (query: IssueQuery) => void }): JSX.Element {
+    const search = query.search;
+    const setSearch = (value: string) => {setQuery({...query, search: value});};
     return (
         <div className="relative">
             <Search
@@ -66,4 +82,26 @@ function SearchInput({ search, setSearch }: { search: string, setSearch: (val: s
             )}
         </div>
     );
+}
+
+async function fetchIssues(query: IssueQuery) : Promise<Issue[]> {
+    const { data, error } = await client.GET("/api/issues", {
+        params: {
+            query : {
+                search: query.search,
+                show: query.show,
+                location_id: query.location,
+                date_after: query.dateAfter,
+                date_before: query.dateBefore,
+                tags: query.tags.map(tag => tag.id).join(','),
+                ordering: query.ordering,
+            },
+        },
+    });
+    if (data) {
+        return data as Issue[];
+    } else {
+        console.log(error)
+        return [];
+    }
 }

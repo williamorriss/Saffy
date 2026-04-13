@@ -9,7 +9,18 @@ export type CreateReport = components["schemas"]["CreateReport"];
 export type Report = components["schemas"]["ReportSchema"];
 export type Location = components["schemas"]["LocationSchema"];
 export type Tag = components["schemas"]["TagSchema"];
+export type IssueQueryOrder = components["schemas"]["IssueQueryOrder"];
 
+
+export type IssueQuery = {
+    search?: string;
+    show?: IssueQueryShow;
+    location?: string;
+    dateAfter?: string;
+    dateBefore?: string;
+    ordering?: IssueQueryOrder;
+    tags: Tag[],
+}
 
 
 // export const BACKEND_URL: string = "https://localhost:8000";

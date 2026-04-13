@@ -1,10 +1,10 @@
-import {type JSX, useEffect} from "react";
+import {type JSX, useEffect, useState} from "react";
 import { useNavigate } from "react-router-dom"
 import useAuth from "../../hooks/AuthContext.tsx";
-import { IssueFeed } from "../../components/IssueFeed";
 import HomeSearchbar from "./HomeSearchbar.tsx";
-import useIssueFeed from "../../hooks/UseIssueFeed";
-import {newIssueButton} from "../NewIssuePage/NewIssueButton.tsx";
+import { newIssueButton } from "../NewIssuePage/NewIssueButton.tsx";
+import {client, type Issue} from "../../api";
+import {IssueFeed} from "../../components/IssueFeed.tsx";
 
 function useSession() {
     const { getSession } = useAuth();
@@ -13,10 +13,20 @@ function useSession() {
 
 
 export default function Home(): JSX.Element {
-    const feedHook = useIssueFeed();
+    const [issues, setIssues] = useState<Issue[]>([]);
     const navigate = useNavigate()
 
     useSession();
+    useEffect(() => {
+        const fetchIssues = async () => {
+            const { data } = await client.GET("/api/issues");
+            if (data) {
+                setIssues(data)
+            }
+            setIssues([]);
+        }
+        fetchIssues().then();
+    }, []);
 
     return (
         <> 
@@ -26,15 +36,15 @@ export default function Home(): JSX.Element {
                     <div className="w-full flex justify-between px-6 pb-0 pt-4">
                         <div className="flex items-center gap-4">
                             <nav className="flex items-center gap-4">
-                                {newIssueButton(navigate)}
+                                { newIssueButton(navigate) }
                             </nav>
                         </div>
 
 
                     </div>
 
-                    <HomeSearchbar feed={feedHook}/>
-                    <IssueFeed issues={feedHook.issues} />
+                    <HomeSearchbar setIssues={setIssues}/>
+                    <IssueFeed issues={issues} />
                 </div>
             </div>
         </>

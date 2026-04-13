@@ -4,7 +4,7 @@ import Fuse from 'fuse.js';
 import {useDefaultData} from "../hooks/UseDefaultData.ts";
 
 interface SearchableDropdownProps {
-    onSelect: (option: Location | null) => void;
+    onSelect: (locationId: string | undefined) => void;
     placeholder?: string;
     value?: Location | null;
 }
@@ -57,7 +57,7 @@ export default function LocationSearch({
 
     const handleSelect = (option: Location) => {
         setInternalSelectedOption(option);
-        onSelect(option);
+        onSelect(option.id);
         setIsOpen(false);
         setSearchTerm("");
     };
@@ -65,7 +65,7 @@ export default function LocationSearch({
     const handleClear = (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent the dropdown from immediately reopening
         setInternalSelectedOption(null);
-        onSelect(null);
+        onSelect(undefined);
         setIsOpen(false);
         setSearchTerm("");
     };
