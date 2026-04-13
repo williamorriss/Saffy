@@ -1,4 +1,7 @@
-SELECT issues.id, issues.title, issues.description, issues.location_id FROM issues
+SELECT issues.id, issues.title, issues.description, locations.name, locations.department, locations.url, locations.description, tags.id, tags.name FROM issues
+INNER JOIN locations ON locations.id = issues.location_id
+INNER JOIN issue_tags ON issue_tags.issue_id = issues.id
+INNER JOIN tags ON tags.id = issue_tags.tag_id
 INNER JOIN (
     SELECT issue_id, MIN(created_at) as earliest_report
     FROM reports

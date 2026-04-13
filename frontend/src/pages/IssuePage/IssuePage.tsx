@@ -1,7 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { type JSX, useState, useEffect } from "react";
 import { client, type Issue, type Report, type CreateReport } from "../../api";
-import { DATE_START } from "../../components/DateSlider";
 import { MessageBar } from '../../components/MessageBar';
 
 type NewReportType = {

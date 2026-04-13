@@ -1,6 +1,6 @@
 use axum::extract::{Path, State};
 use axum::Json;
-use sqlx::{query, query_as, query_file_as};
+use sqlx::{query, query_as, query_file, query_file_as};
 use crate::api::auth::AuthSession;
 use crate::AppState;
 use utoipa_axum::routes;
@@ -89,8 +89,20 @@ async fn post_issue(
     ),
 )]
 #[axum::debug_handler]
-async fn get_issues(request_query: Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<IssueSchema>>, AppError> {
-    let issue_query = request_query.0;
+async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<IssueSchema>>, AppError> {
+    #[derive(Debug, sqlx::FromRow)]
+    pub struct IssueRow {
+        pub issue_id: Uuid,
+        pub issue_title: Option<String>,
+        pub issue_description: Option<String>,
+        pub location_id: Uuid,
+        pub location_name: String,
+        pub location_department: String,
+        pub location_url: Option<String>,
+        pub location_description: Option<String>,
+        pub tags: Vec<Vec<String>>,
+        pub rank: f32,
+    }
     let (show_open, show_closed) = match issue_query.show {
         IssueQueryShow::Closed => (false, true),
         IssueQueryShow::Open => (true, false),
@@ -113,6 +125,8 @@ async fn get_issues(request_query: Query<IssueQuery>, State(state): State<AppSta
                 show_closed,
                 issue_query.date_before,
                 issue_query.date_after,
+                &issue_query.tags,
+                issue_query.location_id
             ).fetch_all(&state.db).await,
         _ => todo!(),
     }

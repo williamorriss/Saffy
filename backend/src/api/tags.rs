@@ -12,8 +12,8 @@ use crate::error::AppError;
 
 #[derive(Debug, FromRow, Serialize, ToSchema)]
 pub struct TagSchema {
-    id: Uuid,
-    name: String,
+    pub id: Uuid,
+    pub name: String,
 }
 
 pub fn routes() -> OpenApiRouter<AppState> {

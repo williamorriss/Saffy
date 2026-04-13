@@ -372,10 +372,11 @@ export interface operations {
             query?: {
                 search?: string;
                 show?: components["schemas"]["IssueQueryShow"];
-                location?: string;
+                locationId?: string;
                 dateAfter?: string;
                 dateBefore?: string;
                 ordering?: components["schemas"]["IssueQueryOrder"];
+                tags?: string[];
             };
             header?: never;
             path?: never;
