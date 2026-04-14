@@ -1,7 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { type JSX, useState, useEffect } from "react";
 import { client, type Issue, type Report, type CreateReport } from "../../api";
-import { MessageBar } from '../../components/MessageBar';
 
 type NewReportType = {
     id: number,
@@ -9,14 +8,6 @@ type NewReportType = {
     content: string,
     createdAt: string
 }
-
-const reportExampleData = [
-    { id: 0, reporter: "Tim", content: "This is a test report", createdAt: "2026-3-28" },
-    { id: 1, reporter: "Bob", content: "This is a test report", createdAt: "2026-3-27" },
-    { id: 2, reporter: "Phil", content: "This is a test report", createdAt: "2026-3-26" },
-    { id: 3, reporter: "Tim", content: "This is a test report", createdAt: "2026-3-25" },
-    { id: 4, reporter: "Tim", content: "This is a test report", createdAt: "2026-3-24" },
-]
 
 function reportPanel(report: NewReportType): JSX.Element {
     return (
@@ -32,48 +23,59 @@ function reportPanel(report: NewReportType): JSX.Element {
 
 }
 
-// Bad fetch for now until we get better endpoints, one should get the single issue by id and the others should have a post reports and fetch all reports give Issue ID
-const fetchIssue = async (id: string, setIssue: (issue: Issue | undefined) => void) => {
+async function fetchIssue(id: string, setIssue: (issue: Issue) => void) : Promise<void> {
     const {data} = await client.GET("/api/issues/{id}", {
         params: {
-            query: {
-                search: "",
-                show: "All"
-            },
             path: {id: id}
         }
     })
     if (data) {
-        const target: Issue[] = data.filter((issue: Issue) => issue.id == id);
-        if(target.length != 0) {
-            setIssue(target[0]);
+        setIssue(data);
+    }
+}
+
+async function fetchReports(id: string, setReports: (reports: Report[]) => void) : Promise<void> {
+    const {data} = await client.GET("/api/issues/{id}/reports", {
+        params: {
+            path: {id: id}
         }
+    })
+    if (data) {
+        setReports(data);
     }
 }
 
 export function IssuePage() {
-    const [reports, setReports] = useState<CreateReport[]>([]);
+    const [reports, setReports] = useState<Report[]>([]);
     const [issue, setIssue] = useState<Issue>();
     const [message, setMessage] = useState("");
     const { issueID } = useParams();
 
     useEffect(() => {
-        if (!issueID) return;
+        if (issueID) {
+            fetchIssue(issueID, setIssue).then();
+        } else {
+            console.error("IssueID undef");
+        }
+    }, [issueID]);
 
-        fetchIssue(issueID, setIssue).then();
-
-        // Fetch reports
+    useEffect(() => {
+        if (issueID) {
+            fetchReports(issueID, setReports).then();
+        } else {
+            console.error("IssueID undef");
+        }
     }, []);
 
-    const submitMessage = async () => {
-        // Report endpoint needed
-        console.log("Submit message:", message);
-        setMessage("");
-    }
+    // const submitMessage = async () => {
+    //     // Report endpoint needed
+    //     console.log("Submit message:", message);
+    //     setMessage("");
+    // }
 
     const displayReports = reports.length === 0
         ? <> No reports found.</>
-        : reports.map(reportPanel);
+        : reports.map(report => <> report.id </>);
 
     return (
         <>
@@ -97,9 +99,7 @@ export function IssuePage() {
                         <p className="text-lg font-bold !text-black">Reports:</p>
                         <p className="text-sm text-gray-600 italic opacity-50">{reports.length} found</p>
                     </div>
-                    <div className="w-full items-center pb-4">
-                        <MessageBar message={message} setMessage={setMessage} submit={submitMessage}/>
-                    </div>
+
                     {displayReports}
                 </div>
             </div>
