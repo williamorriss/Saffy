@@ -1,4 +1,4 @@
-import {type IssueQuery, type Issue, client} from "../../api";
+import {type IssueQuery, type Issue, client, type IssueQueryOrder} from "../../api";
 import {type JSX , useState} from "react";
 // set search Params
 import LocationSearch from "../../components/LocationSearch.tsx";
@@ -85,6 +85,7 @@ function SearchInput({ query, setQuery }: { query: IssueQuery, setQuery: (query:
 }
 
 async function fetchIssues(query: IssueQuery) : Promise<Issue[]> {
+    const ordering: IssueQueryOrder = query.search === undefined ?  "NewestFirst" : "Relevance";
     const { data, error } = await client.GET("/api/issues", {
         params: {
             query : {
@@ -93,8 +94,8 @@ async function fetchIssues(query: IssueQuery) : Promise<Issue[]> {
                 location_id: query.location,
                 date_after: query.dateAfter,
                 date_before: query.dateBefore,
-                tags: query.tags.map(tag => tag.id).join(','),
-                ordering: query.ordering,
+                tags: query.tags.map(tag => tag.name),
+                ordering,
             },
         },
     });

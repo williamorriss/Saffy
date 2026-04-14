@@ -188,8 +188,8 @@ export interface components {
         IssueSchema: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
-            locationId?: string | null;
+            location?: null | components["schemas"]["LocationSchema"];
+            tags: components["schemas"]["TagSchema"][];
             title?: string | null;
             description?: string | null;
         };
@@ -215,8 +215,6 @@ export interface components {
             closedAt?: string | null;
         };
         TagSchema: {
-            /** Format: uuid */
-            id: string;
             name: string;
         };
         UserSchema: {

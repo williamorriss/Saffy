@@ -6,13 +6,11 @@ use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use sqlx::FromRow;
-use uuid::Uuid;
 use crate::AppState;
 use crate::error::AppError;
 
 #[derive(Debug, FromRow, Serialize, ToSchema)]
 pub struct TagSchema {
-    pub id: Uuid,
     pub name: String,
 }
 
@@ -32,7 +30,7 @@ pub fn routes() -> OpenApiRouter<AppState> {
 #[axum::debug_handler]
 pub async fn get_tags(State(state): State<AppState>) -> Result<Json<Vec<TagSchema>>, AppError> {
     query_as!(TagSchema,
-        r#"SELECT id, name FROM tags"#
+        r#"SELECT name FROM tags"#
     ).fetch_all(&state.db).await
         .map(Json)
         .map_err(AppError::from)
