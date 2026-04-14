@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { client, type Tag, type Location, type CreateIssue } from "../../api";
 import LocationSearch from "../../components/LocationSearch.tsx";
-import { TagSelectionBox, TagDisplay } from "../../components/TagFilter.tsx";
+import { TagSelectionBox } from "../../components/TagFilter.tsx";
 
 const CreateIssueSchema = z.object({
     title: z.string(),
@@ -36,7 +36,7 @@ function NewIssueLocationSearch({ control, name, placeholder }: DropDownWrapperP
             control={control}
             render={({ field }) => (
                 <LocationSearch
-                    onSelect={(option) => field.onChange(option?.name || "")}
+                    onSelect={(option) => field.onChange(option)}
                     placeholder={placeholder}
                 />
             )}
@@ -91,7 +91,7 @@ export default function NewIssue() {
                         <form onSubmit={handleSubmit(submitNewIssue)} className="flex flex-col gap-4 p-4 w-full">
                             <div className="flex flex-row w-full gap-4">
                                 <NewIssueLocationSearch control={control} name="issueType" placeholder="Issue Type" setValue={setLocation} />
-                                <TagSelectionBox visible={tagSelectionVisible} selectedTags={tags} setSelectedTags={setTags} />
+                                <TagSelectionBox visible={tagSelectionVisible} tags={tags} setTags={setTags} />
 
                             </div>
 

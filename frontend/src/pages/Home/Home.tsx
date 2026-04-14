@@ -2,7 +2,7 @@ import {type JSX, useEffect, useState} from "react";
 import { useNavigate } from "react-router-dom"
 import useAuth from "../../hooks/AuthContext.tsx";
 import HomeSearchbar from "./HomeSearchbar.tsx";
-import { newIssueButton } from "../NewIssuePage/NewIssueButton.tsx";
+import { newIssueButton } from "./NewIssueButton.tsx";
 import {client, type Issue} from "../../api";
 import {IssueFeed} from "../../components/IssueFeed.tsx";
 

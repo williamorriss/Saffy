@@ -26,6 +26,6 @@ export function useDefaultData() {
     }, [])
 
     return {
-        locations, tags
+        locations, allTags: tags
     }
 }

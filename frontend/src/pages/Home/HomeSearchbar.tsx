@@ -1,4 +1,4 @@
-import {type IssueQuery, type Issue, client, type IssueQueryOrder} from "../../api";
+import {type IssueQuery, type Issue, client, type IssueQueryOrder, type Tag} from "../../api";
 import {type JSX , useState} from "react";
 // set search Params
 import LocationSearch from "../../components/LocationSearch.tsx";
@@ -23,6 +23,8 @@ export default function HomeSearchbar({setIssues} : {setIssues: (issues: Issue[]
         setIssues(await fetchIssues(query))
     }
 
+    const setTags = (tags: Tag[]) => setQuery({...query, tags})
+
     return (
         <form className="w-full px-6 p-4" action={search} >
             <div className="flex flex-col gap-4" tabIndex={-1}>
@@ -45,10 +47,10 @@ export default function HomeSearchbar({setIssues} : {setIssues: (issues: Issue[]
                     </div>
                 </div>
 
-                <TagDisplay query={query} setQuery={setQuery} />
+                <TagDisplay tags={query.tags} setTags={setTags} />
 
                 <div>
-                    <TagSelectionBox visible={tagSelectionVisible} query={query} setQuery={setQuery} />
+                    <TagSelectionBox visible={tagSelectionVisible} tags={query.tags} setTags={setTags} />
                 </div>
             </div>
         </form>

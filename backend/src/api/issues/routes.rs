@@ -31,6 +31,7 @@ pub fn routes() -> OpenApiRouter<AppState> {
         .routes(routes!(get_issue))
         .routes(routes!(post_report))
         .routes(routes!(post_issue))
+        .routes(routes!(get_reports))
 }
 
 #[utoipa::path(
@@ -145,27 +146,25 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
         ("id" = Uuid, Path, description = "Issue uuid")
     ),
     responses(
-        (status = 200, description = "All reports for issue", body = Vec<ReportSchema>),
+        (status = 200, description = "All reports for issue", body = IssueSchema),
         (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
     ),
 )]
 #[axum::debug_handler]
-async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) -> Result<Json<Vec<ReportSchema>>, AppError> {
-    query_as!(
-        ReportSchema,
-        r#"
-            SELECT id, issue_id, reporter_id, description, created_at, closed_at FROM reports WHERE issue_id = $1
-            ORDER BY created_at
-        "#,
+async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) -> Result<Json<IssueSchema>, AppError> {
+    query_file_as!(
+        IssueRow,
+        "sql/select_issue.sql",
         issue_id
-    ).fetch_all(&state.db).await
+    ).fetch_one(&state.db).await
+        .map(IssueSchema::from)
         .map(Json)
         .map_err(AppError::from)
 }
 
 #[utoipa::path(
     post,
-    path = "/issues/{id}",
+    path = "/issues/{id}/reports",
     params(("id" = Uuid, Path, description = "Issue uuid")),
     request_body = CreateReport,
     responses(
@@ -187,6 +186,32 @@ async fn post_report(
         session.id,
         new_report.description
     ).fetch_one(&state.db).await
+        .map(Json)
+        .map_err(AppError::from)
+}
+
+
+#[utoipa::path(
+    get,
+    path = "/issues/{id}/reports",
+    params(("id" = Uuid, Path, description = "Issue uuid")),
+    responses(
+        (status = 201, description = "Created new report", body=Vec<ReportSchema>),
+        (status = 500, description = "Failed to create new report")
+    ),
+)]
+#[axum::debug_handler]
+async fn get_reports(
+    AuthSession(session): AuthSession,
+    State(state): State<AppState>,
+    Path(issue_id): Path<Uuid>,
+    Json(new_report): Json<CreateReport>
+) -> Result<Json<Vec<ReportSchema>>, AppError> {
+    query_as!(
+        ReportSchema,
+        r#"SELECT id, issue_id, reporter_id, description, created_at, closed_at FROM reports WHERE issue_id = $1 ORDER BY created_at"#,
+        issue_id,
+    ).fetch_all(&state.db).await
         .map(Json)
         .map_err(AppError::from)
 }

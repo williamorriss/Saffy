@@ -148,14 +148,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/issues/{id}": {
+    "/issues/{id}/reports": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["get_reports"];
         put?: never;
         post: operations["post_report"];
         delete?: never;
@@ -449,7 +449,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReportSchema"][];
+                    "application/json": components["schemas"]["IssueSchema"];
                 };
             };
             /** @description Could not make new issue */
@@ -507,6 +507,36 @@ export interface operations {
                 };
             };
             /** @description Could not fetch tags */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_reports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Issue uuid */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created new report */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportSchema"][];
+                };
+            };
+            /** @description Failed to create new report */
             500: {
                 headers: {
                     [name: string]: unknown;
