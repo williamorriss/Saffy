@@ -4,6 +4,17 @@ Saffy repository, mirror of https://github.com/williamorriss/Saffy.
 For dev the database is containerised whilst the rest of the code should ***theoretically** work both locally and through containers.
 
 ## Database container
+localhost vs db depending on whether backend is containerised
+port 5433 not 5432 as background postgres may use 5432
+make sure database url and pg_user etc match
+```
+DATABASE_URL=postgresql://dev:dev@localhost:5433/dev
+PG_USER=dev
+PG_PASSWORD=dev
+PG_DATABASE=dev
+```
+(example .env)
+
 ### Make Commands
 ```bash
 make db-init
