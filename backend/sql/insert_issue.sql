@@ -12,7 +12,7 @@ SELECT
     locations.department as location_department,
     locations.url as location_url,
     locations.description AS location_description,
-    array_agg(tags.name) AS tags
+    NULLIF(array_remove(array_agg(tags.name), NULL), '{}') AS tags
 FROM inserted
          JOIN locations ON locations.id = inserted.location_id
          LEFT JOIN issue_tags ON issue_tags.issue_id = inserted.id
