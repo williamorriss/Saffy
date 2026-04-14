@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT name FROM unnest($1::text[]) AS v(name)\n        EXCEPT SELECT name FROM tags\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "04e8ee17b60945e2a98b0a59ea291619c1d48e9b46f3187c17094156e69843b0"
+}

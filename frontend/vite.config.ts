@@ -5,6 +5,8 @@ import path from 'path'
 
 export default defineConfig({
   server: {
+      host: "0.0.0.0",
+      port: 5173,
     proxy: {
       "/api": {
         target: "http://localhost:8000",
@@ -12,8 +14,8 @@ export default defineConfig({
       },
 
     },
-  },
-  plugins: [react(), tailwindcss()],
+    },
+    plugins: [react(), tailwindcss()],
     resolve: {
     alias: {
       '@rtypes': path.resolve('./src/types'),
