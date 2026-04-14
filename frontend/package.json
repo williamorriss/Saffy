@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "openapi-typescript http://localhost:8000/openapi.json -o src/api/types.ts || echo 'Backend offline — using existing types'",
+    "predev": "openapi-typescript http://localhost:8000/openapi.json -o src/api/types.ts",
     "dev": "concurrently \"vite\" \"npm run watch-types\"",
     "fetch-spec": "curl http://localhost:8000/openapi.json -o openapi.json",
     "watch-types": "chokidar 'openapi.json' -c 'openapi-typescript openapi.json -o src/api/types.ts'",

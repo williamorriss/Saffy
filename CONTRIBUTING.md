@@ -1,9 +1,35 @@
 Saffy repository, mirror of https://github.com/williamorriss/Saffy.
 
-In ./backend add:
-- ~~key.pem and cert.pem~~ Should be able to run as http now!
-- .env file with DATABASE_URL = <database connection string>
+# Running in Development
+For dev the database is containerised whilst the rest of the code should ***theoretically** work both locally and through containers.
 
+## Database container
+### Make Commands
+```bash
+make db-init
+```
+
+### Start DB Session
+```bash
+make db-up
+```
+
+### Pause DB (Save Data)
+```bash
+make db-stop
+```
+
+### Resume DB
+```bash
+make db-start
+```
+
+### Drop DB
+```bash
+make db-drop
+```
+
+## Local Dev
 See openapi.json for backend/ frontend api spec.
 
 Debug backend server with:
@@ -21,4 +47,5 @@ Generate api types with:
 cd backend && cargo run --bin openapi && cd ../frontend && npm run gen-types
 ```
 
-> DO NOT TRUST THE OLD README (wrangler is for cloudflare, it cannot help you here)
+## Container Dev
+.... untested

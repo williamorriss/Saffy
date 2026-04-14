@@ -8,10 +8,11 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "psycopg2 (>=2.9.11,<3.0.0)",
-    "mypy (>=1.20.0,<2.0.0)",
     "python-dotenv (>=1.2.2,<2.0.0)",
 ]
 
+[tool.poetry]
+package-mode = false
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -19,5 +20,6 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
-    "types-psycopg2 (>=2.9.21.20260408,<3.0.0.0)"
+    "types-psycopg2 (>=2.9.21.20260408,<3.0.0.0)",
+    "mypy (>=1.20.0,<2.0.0)",
 ]
