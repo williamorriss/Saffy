@@ -1,44 +1,21 @@
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DB: ${PG_DATABASE}
-    ports:
-      - "5433:5432" # local postgres running
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DATABASE}" ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
-
+  # RUST BACKEND
   backend:
     build: ./backend
+    restart: on-failure
     ports:
       - "8000:8000"
-
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/health" ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 60s   # cargo-watch compile time
-
     volumes:
       - ./backend:/app
-      - cargo-cache:/usr/local/cargo/registry   # cache deps
-      - target-cache:/app/target                 # cache builds
+      - cargo-cache:/usr/local/cargo/registry
+      - target-cache:/app/target
     environment:
       DATABASE_URL: postgresql://${PG_USER}:${PG_PASSWORD}@db:5432/${PG_DATABASE}
+    # Note: depends_on works across files if using the same project name
     depends_on:
-      db:
-        condition: service_healthy
+      - db
 
+  # FRONTEND (Vite/Node)
   frontend:
     build: ./frontend
     ports:
@@ -50,6 +27,5 @@ services:
       - backend
 
 volumes:
-  pgdata:
   cargo-cache:
   target-cache:

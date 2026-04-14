@@ -40,7 +40,9 @@ def set_loc_table(db: Connection, locations: list[dict[str,str]]) -> None:
     print(f"Loaded {len(locations)} locations")
 
 def main() -> None:
-    with psycopg2.connect(os.getenv("DATABASE_URL")) as db:
+    db_url = os.getenv("DATABASE_URL")
+    print(db_url)
+    with psycopg2.connect(db_url) as db:
         loaded = load_locations()
         tags = load_tags()
         print(loaded)
