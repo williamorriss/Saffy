@@ -1,10 +1,9 @@
 WITH filtered AS (
     SELECT issues.id
     FROM issues
-             JOIN issue_tags ON issue_tags.issue_id = issues.id
+    LEFT JOIN issue_tags ON issue_tags.issue_id = issues.id
     WHERE (CARDINALITY($6::uuid[]) = 0 OR issue_tags.tag_id = ANY($6::uuid[]))
       AND ($7::uuid IS NULL OR issues.location_id = $7::uuid)
-      AND ($1 = '' OR issues.search_vector @@ to_tsquery('english', $1))
     GROUP BY issues.id
     HAVING (CARDINALITY($6::uuid[]) = 0 OR COUNT(DISTINCT issue_tags.tag_id) = CARDINALITY($6::uuid[]))
 ),
@@ -20,20 +19,20 @@ WITH filtered AS (
      )
 SELECT
     issues.id AS issue_id,
-    issues.title AS issue_title,
-    issues.description AS issue_description,
-    locations.id AS location_id,
-    locations.name AS location_name,
-    locations.department AS location_department,
-    locations.url AS location_url,
-    locations.description AS location_description,
-    array_agg(array[tags.id :: text, tags.name]) AS tags
+    issues.title AS "issue_title?",
+    issues.description AS "issue_description?",
+    locations.id AS "location_id?",
+    locations.name AS "location_name?",
+    locations.department AS "location_department?",
+    locations.url AS "location_url?",
+    locations.description AS "location_description?",
+    array_agg(tags.name) FILTER (WHERE tags.name IS NOT NULL) AS "tags?"
 FROM filtered
-         JOIN issues ON issues.id = filtered.id
-         JOIN locations ON locations.id = issues.location_id
-         JOIN issue_tags ON issue_tags.issue_id = issues.id
-         JOIN tags ON tags.id = issue_tags.tag_id
-         LEFT JOIN r ON r.issue_id = issues.id
+     LEFT JOIN issues ON issues.id = filtered.id
+     LEFT JOIN locations ON locations.id = issues.location_id
+     LEFT JOIN issue_tags ON issue_tags.issue_id = issues.id
+     LEFT JOIN tags ON tags.id = issue_tags.tag_id
+     INNER JOIN r ON r.issue_id = issues.id
 GROUP BY
     issues.id,
     issues.title,

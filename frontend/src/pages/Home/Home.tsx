@@ -19,11 +19,12 @@ export default function Home(): JSX.Element {
     useSession();
     useEffect(() => {
         const fetchIssues = async () => {
-            const { data } = await client.GET("/api/issues");
+            const { data } = await client.GET("/api/issues")
             if (data) {
                 setIssues(data)
+            } else {
+                setIssues([]);
             }
-            setIssues([]);
         }
         fetchIssues().then();
     }, []);

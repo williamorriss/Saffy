@@ -12,11 +12,11 @@ use crate::error::AppError;
 
 #[derive(Debug, FromRow, Serialize, ToSchema)]
 pub struct LocationSchema {
-    id: Uuid,
-    name: String,
-    description: String,
-    department: String,
-    url: String
+    pub id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub department: String,
+    pub url: String
 }
 
 pub fn routes() -> OpenApiRouter<AppState> {

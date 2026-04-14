@@ -2,12 +2,11 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
-use sqlx::{Error, FromRow, Row};
-use sqlx::postgres::PgRow;
+use sqlx::FromRow;
 use crate::api::locations::LocationSchema;
 use crate::error::AppError;
 use crate::api::tags::TagSchema;
-
+use super::routes::IssueRow;
 
 // issues
 
@@ -21,26 +20,34 @@ pub struct IssueSchema {
     pub description: Option<String>,
 }
 
-impl FromRow<'_, PgRow> for IssueSchema {
-    fn from_row(row: &PgRow) -> Result<Self, Error> {
-        let location = LocationSchema::from_row(row)?;
-        let tags = row.try_get::<Vec<(String, String)>, _>("tags")?
-            .into_iter()
-            .filter_map(|(str_uuid, name)| {
-                    if let Ok(id) = str_uuid.parse::<Uuid>() {
-                        Some(TagSchema { id, name})
-                    } else {
-                        None
-                    }
-                })
-                .collect();
+impl From<IssueRow> for IssueSchema {
 
-         Ok(IssueSchema {
-            id: row.try_get("issue_id")?,
-            title: row.try_get("issue_title")?,
-            description: row.try_get("issue_description")?,
-            location: Some(location), tags
-        })
+    fn from(row: IssueRow) -> IssueSchema {
+        let location = if
+            let Some(location_id) = row.location_id &&
+            let Some(location_name) = row.location_name &&
+            let Some(location_description) = row.location_description &&
+            let Some(location_department) = row.location_department &&
+            let Some(location_url) = row.location_url {
+                Some(LocationSchema {
+                    id: location_id,
+                    name: location_name,
+                    description: location_description,
+                    department: location_department,
+                    url: location_url
+                })
+            } else {
+                None
+            };
+
+        let tags: Vec<_> = row.tags.map_or(vec![], |tags| tags.into_iter().map(|tag| TagSchema {name:tag}).collect());
+
+        IssueSchema {
+            id: row.issue_id,
+            title: row.issue_title,
+            description: row.issue_description,
+            location, tags
+        }
     }
 }
 

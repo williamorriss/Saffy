@@ -1,6 +1,6 @@
 use axum::extract::{Path, State};
 use axum::Json;
-use sqlx::{query, query_as, query_file, query_file_as};
+use sqlx::{query, query_as, query_file_as};
 use crate::api::auth::AuthSession;
 use crate::AppState;
 use utoipa_axum::routes;
@@ -9,6 +9,21 @@ use utoipa_axum::router::OpenApiRouter;
 use crate::error::AppError;
 use uuid::Uuid;
 use super::models::{IssueSchema, CreateIssue, IssueQuery, IssueQueryShow, IssueQueryOrder, ReportSchema, CreateIssueResponse, CreateReport, CreateIssueParams};
+
+#[derive(Debug, sqlx::FromRow)]
+pub struct IssueRow {
+    pub issue_id: Uuid,
+    pub issue_title: Option<String>,
+    pub issue_description: Option<String>,
+    // locations
+    pub location_id: Option<Uuid>,
+    pub location_name: Option<String>,
+    pub location_department: Option<String>,
+    pub location_url: Option<String>,
+    pub location_description: Option<String>,
+    // tags
+    pub tags: Option<Vec<String>>,
+}
 
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
@@ -49,14 +64,13 @@ async fn post_issue(
             .collect::<Vec<String>>().join(", ");
         return Err(AppError::BadRequest(format!("Bad request, did not recognise tags: {bad_tags}")))
     }
-
-    let issue = query_as!(
-        IssueSchema,
-        r#"INSERT INTO issues (title, description,  location_id) VALUES ($1, $2, $3) RETURNING id, title, location_id, description"#,
+    let issue: IssueSchema = query_file_as!(
+        IssueRow,
+        "sql/insert_issue.sql",
         new_issue.title,
         new_issue.description,
         new_issue.location_id
-    ).fetch_one(transaction.as_mut()).await?;
+    ).fetch_one(transaction.as_mut()).await?.into();
 
     query!(r#"
         WITH tag_ids AS (SELECT id FROM tags WHERE name = ANY($1::text[]))
@@ -90,48 +104,38 @@ async fn post_issue(
 )]
 #[axum::debug_handler]
 async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<IssueSchema>>, AppError> {
-    #[derive(Debug, sqlx::FromRow)]
-    pub struct IssueRow {
-        pub issue_id: Uuid,
-        pub issue_title: Option<String>,
-        pub issue_description: Option<String>,
-        pub location_id: Uuid,
-        pub location_name: String,
-        pub location_department: String,
-        pub location_url: Option<String>,
-        pub location_description: Option<String>,
-        pub tags: Vec<Vec<String>>,
-        pub rank: f32,
-    }
+
     let (show_open, show_closed) = match issue_query.show {
         IssueQueryShow::Closed => (false, true),
         IssueQueryShow::Open => (true, false),
         IssueQueryShow::All => (true, true),
     };
-    match issue_query.ordering {
+    Ok(Json(match issue_query.ordering {
         IssueQueryOrder::NewestFirst => query_file_as!(
-                IssueSchema,
-                "sql/newest_issues.sql",
-                show_open,
-                show_closed,
-                issue_query.date_before,
-                issue_query.date_after,
-            ).fetch_all(&state.db).await,
+            IssueRow,
+            "sql/newest_issues.sql",
+            show_open,
+            show_closed,
+            issue_query.date_before,
+            issue_query.date_after
+        ).fetch_all(&state.db).await,
         IssueQueryOrder::Relevance => query_file_as!(
-                IssueSchema,
-                "sql/relevant_issues.sql",
-                issue_query.search.to_owned().unwrap_or("".to_string()),
-                show_open,
-                show_closed,
-                issue_query.date_before,
-                issue_query.date_after,
-                &issue_query.tags,
-                issue_query.location_id
-            ).fetch_all(&state.db).await,
+            IssueRow,
+            "sql/relevant_issues.sql",
+            issue_query.search.to_owned().unwrap_or("".to_string()),
+            show_open,
+            show_closed,
+            issue_query.date_before,
+            issue_query.date_after,
+            &issue_query.tags,
+            issue_query.location_id
+        ).fetch_all(&state.db).await,
         _ => todo!(),
-    }
-        .map(Json)
-        .map_err(AppError::from)
+    }?
+        .into_iter()
+        .map(IssueSchema::from)
+        .collect::<Vec<_>>()))
+
 }
 
 #[utoipa::path(
