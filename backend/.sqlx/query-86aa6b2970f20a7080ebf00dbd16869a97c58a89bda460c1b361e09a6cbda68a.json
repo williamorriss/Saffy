@@ -1,0 +1,72 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH inserted AS (\n    INSERT INTO issues (title, description, location_id)\n        VALUES ($1, $2, $3)\n        RETURNING id, title, description, location_id\n)\nSELECT\n    inserted.id as issue_id,\n    inserted.title as issue_title,\n    inserted.description as issue_description,\n    locations.id AS location_id,\n    locations.name as location_name,\n    locations.department as location_department,\n    locations.url as location_url,\n    locations.description AS location_description,\n    NULLIF(array_remove(array_agg(tags.name), NULL), '{}') AS tags\nFROM inserted\n         JOIN locations ON locations.id = inserted.location_id\n         LEFT JOIN issue_tags ON issue_tags.issue_id = inserted.id\n         LEFT JOIN tags ON tags.id = issue_tags.tag_id\nGROUP BY\n    inserted.id, inserted.title, inserted.description,\n    locations.id, locations.name, locations.department, locations.url, locations.description",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "issue_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "issue_title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "issue_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "location_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "location_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "location_department",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "location_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "location_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "tags",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "86aa6b2970f20a7080ebf00dbd16869a97c58a89bda460c1b361e09a6cbda68a"
+}

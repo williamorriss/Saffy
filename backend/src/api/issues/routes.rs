@@ -202,10 +202,9 @@ async fn post_report(
 )]
 #[axum::debug_handler]
 async fn get_reports(
-    AuthSession(session): AuthSession,
+    AuthSession(_session): AuthSession,
     State(state): State<AppState>,
     Path(issue_id): Path<Uuid>,
-    Json(new_report): Json<CreateReport>
 ) -> Result<Json<Vec<ReportSchema>>, AppError> {
     query_as!(
         ReportSchema,
