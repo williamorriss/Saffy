@@ -1,19 +1,19 @@
 import {useState, useRef, useEffect, type ChangeEvent, type JSX} from 'react';
-import { type Location } from "../api";
+import {type Location} from "../api";
 import Fuse from 'fuse.js';
 import useDefaultData from "../hooks/UseDefaultData.ts";
 import { Search, X, ExternalLink } from "lucide-react";
 import * as React from "react";
 
 
-export default function LocationSearch( { setLocationID } : { setLocationID : ((locID: string | undefined) => void)}) {
+export default function LocationSearch( { setLocation } : { setLocation: (location: string | undefined) => void }) : JSX.Element {
     const { allLocations, locationMap } = useDefaultData();
-    const [ selectedLocation, setSelectedLocation ] = useState<Location|null>(null); // internal tracker of which location is set
-    const [search, setSearch] = useState(""); // search term in bar
+    const [ selected, setSelected ] = useState<Location|null>(null); // internal tracker of which location is set
+    const [search, setSearch] = useState<string|null>(null); // search term in bar
     const [isOpen, setIsOpen] = useState(false); // whether ui component is being interacted w/ or not
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const alphabetical = allLocations.sort((a,b) => a.name.localeCompare(b.name));
+    const alphabetical: Location[] = [...allLocations].sort((a,b) => a.name.localeCompare(b.name));
 
     const fuse = new Fuse(allLocations, {
         keys: ["name"],
@@ -32,7 +32,7 @@ export default function LocationSearch( { setLocationID } : { setLocationID : ((
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const rankedLocations: Location[] = search === undefined
+    const rankedLocations: Location[] = search === null
         ? alphabetical
         : fuse
             .search(search)
@@ -40,18 +40,18 @@ export default function LocationSearch( { setLocationID } : { setLocationID : ((
             .map(result => result.item)
 
     const handleSelect = (loc: Location) => {
-        setLocationID(loc.id);
-        setSelectedLocation(loc);
+        setLocation(loc.id);
+        setSelected(loc);
         setIsOpen(false);
         setSearch(loc.name);
     };
 
-    const handleChange = (event: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const text = event.target.value;
         if (locationMap.has(text)) {
             const location: Location = locationMap.get(text)!;
-            setLocationID(location.id);
-            setSelectedLocation(location)
+            setLocation(location.id);
+            setSelected(location)
         }
 
         setSearch(text);
@@ -59,8 +59,8 @@ export default function LocationSearch( { setLocationID } : { setLocationID : ((
 
     const handleClear = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setSelectedLocation(null);
-        setLocationID(undefined);
+        setSelected(null);
+        setLocation(undefined);
         // setIsOpen(false);
         setSearch("");
     };
@@ -73,7 +73,7 @@ export default function LocationSearch( { setLocationID } : { setLocationID : ((
             />
             <input // search input
                 type="text"
-                value={search}
+                value={search ?? ""}
                 onChange={handleChange}
                 onFocus={() => setIsOpen(true)}
                 placeholder="Search locations..."
@@ -114,7 +114,7 @@ export default function LocationSearch( { setLocationID } : { setLocationID : ((
                         </style>
 
                         {rankedLocations.length > 0
-                            ? <LocationDropdown ranked={rankedLocations} selected={selectedLocation} handleSelect={handleSelect} />
+                            ? <LocationDropdown ranked={rankedLocations} selected={selected} handleSelect={handleSelect} />
                             : (
                             <div className="px-4 py-3 text-sm text-black text-center">
                                 No results found

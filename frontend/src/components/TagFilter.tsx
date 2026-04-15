@@ -1,35 +1,35 @@
-import type { Tag } from "../api";
-import {type JSX, useEffect, useState, useRef, type ChangeEvent} from "react";
+import {type JSX, useEffect, useState, useRef} from "react";
 import useDefaultData , {getTagIcon} from "../hooks/UseDefaultData.ts";
 import Fuse from 'fuse.js';
 import {type LucideIcon, Search, X} from "lucide-react";
 import * as React from "react";
 
-export function TagSelectionBox({ setSelected }: {setSelected: (tags: Tag[]) => void;}): JSX.Element {
+export function TagSelectionBox({ setTags }: { setTags: (tags: string[]) => void}): JSX.Element {
     const { allTags } = useDefaultData();
     const dropdownRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
     const [search, setSearch] = useState("");
     const [isOpen, setIsOpen] = useState(false);
-    const [tags, setTags] = useState<Tag[]>([]);
+    const [selected, setSelected] = useState<string[]>([]);
 
-    const alphabetical = [...allTags].sort((a, b) => a.name.localeCompare(b.name));
+    const alphabetical = [...allTags].sort((a, b) => a.localeCompare(b));
 
-    const addTag = (tag: Tag) => {
-        const next = [...tags, tag];
-        setTags(next);
+
+    const addTag = (tag: string) => {
+        const next = [...selected, tag];
         setSelected(next);
-    };
-    const removeTag = (tag: Tag) => {
-        const next = tags.filter((t: Tag) => t.name !== tag.name);
         setTags(next);
-        setSelected(next);
     };
-    const includesTag = (tag: Tag) => tags.some(t => t.name === tag.name);
+    const removeTag = (tag: string) => {
+        const next = selected.filter(t => t !== tag);
+        setSelected(next);
+        setTags(next);
+    };
+    const includesTag = (tag: string) => selected.some(t => t === tag);
     const clearTags = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setTags([]);
         setSelected([]);
+        setTags([]);
     };
 
     useEffect(() => {
@@ -54,14 +54,14 @@ export function TagSelectionBox({ setSelected }: {setSelected: (tags: Tag[]) => 
         threshold: 1.0,
     });
 
-    const rankedTags: Tag[] = search === ""
+    const rankedTags: string[] = search === ""
         ? alphabetical
         : fuse
             .search(search)
             .sort((a, b) => (a.score ?? 1) - (b.score ?? 1))
             .map(result => result.item);
 
-    const handleSelect = (tag: Tag) => {
+    const handleSelect = (tag: string) => {
         if (includesTag(tag)) {
             removeTag(tag);
         } else {
@@ -76,11 +76,11 @@ export function TagSelectionBox({ setSelected }: {setSelected: (tags: Tag[]) => 
                 className="min-h-10 w-full flex flex-wrap items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg bg-white cursor-text focus-within:ring-2 focus-within:ring-blue-500"
                 onClick={() => setIsOpen(true)}
             >
-                {tags.length === 0 && (
+                {selected.length === 0 && (
                     <span className="text-gray-400 text-sm select-none">Select tags...</span>
                 )}
-                {tags.map((tag, index) => displayTagWidget(tag, index, removeTag, getTagIcon(tag)))}
-                {tags.length > 0 && (
+                {selected.map((tag, index) => displayTagWidget(tag, index, removeTag, getTagIcon(tag)))}
+                {selected.length > 0 && (
                     <button
                         type="button"
                         onClick={clearTags}
@@ -109,7 +109,7 @@ export function TagSelectionBox({ setSelected }: {setSelected: (tags: Tag[]) => 
                         />
                     </div>
 
-                    {/* Tag list */}
+                    {/* string list */}
                     <div
                         className="max-h-60 overflow-y-auto options-list"
                         style={{ scrollbarWidth: 'thin', scrollbarColor: 'black white' }}
@@ -138,15 +138,15 @@ export function TagSelectionBox({ setSelected }: {setSelected: (tags: Tag[]) => 
 }
 
 
-function displayTagWidget(tag: Tag, index: number, removeTag: (tag: Tag) => void, Icon: LucideIcon ) {
+function displayTagWidget(tag: string, index: number, removeTag: (tag: string) => void, Icon: LucideIcon ) {
     return (
         <div
             key={index.toString()}
             className="flex items-center px-2 py-0.5 text-sm text-gray-700 bg-gray-200 rounded-full"
         >
-            {tag.name}
+            {tag}
             <Icon size={18} />
-            <button
+            <button type="button"
                 className="ml-1.5 font-bold text-gray-500 hover:text-black focus:outline-none text-capitalize text-lg"
                 onClick={(e) => {
                     e.stopPropagation();
@@ -162,15 +162,15 @@ function displayTagWidget(tag: Tag, index: number, removeTag: (tag: Tag) => void
 
 }
 
-function displayTag(tag: Tag, index: number, onSelect: (tag: Tag) => void, Icon: LucideIcon, isSelected: boolean) {
+function displayTag(tag: string, index: number, onSelect: (tag: string) => void, Icon: LucideIcon, isSelected: boolean) {
     return (
-        <button
+        <button type="button"
             key={index.toString()}
             onClick={() => onSelect(tag)}
             className={`${isSelected ? "bg-green-600" : "hover:bg-gray-100"} w-full text-left px-4 py-2 text-sm text-black border-b border-gray-100 last:border-0 transition-colors`}
         >
             <Icon size={20} />
-            {tag.name}
+            {tag}
         </button>
     );
 }

@@ -57,6 +57,28 @@ CREATE TABLE IF NOT EXISTS reports (
   closed_at TIMESTAMPTZ
 );
 
+-- views
+CREATE VIEW full_issues AS
+    SELECT
+        i.id AS issue_id,
+        i.title AS issue_title,
+        i.description AS issue_description,
+        l.id AS location_id,
+        l.name AS location_name,
+        l.department AS location_department,
+        l.url AS location_url,
+        l.description AS location_description,
+        coalesce(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags,
+        i.search_vector AS search_vector
+    FROM issues i
+    LEFT JOIN locations l ON l.id = i.location_id
+    LEFT JOIN issue_tags it ON it.issue_id = i.id
+    LEFT JOIN tags t ON t.id = it.tag_id
+    GROUP BY
+        i.id, i.title, i.description,
+        l.id, l.name, l.department, l.url, l.description;
+
+
 CREATE INDEX idx_issues_location_id ON issues(location_id);
 CREATE INDEX idx_reports_issue_id ON reports(issue_id);
 CREATE INDEX idx_reports_issue_id_created_at

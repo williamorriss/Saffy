@@ -20,8 +20,8 @@ function makeTagMap(tags: Tag[]) : Map<string, Tag> {
 }
 
 
-export function getTagIcon(tag: Tag) : LucideIcon {
-    const name = tag.name.toUpperCase();
+export function getTagIcon(tag: string) : LucideIcon {
+    const name = tag.toUpperCase();
     switch (name) {
         case "PHYSICAL" : {
             return Accessibility;
@@ -78,6 +78,6 @@ export default function useDefaultData() {
     }, [])
 
     return {
-        allLocations: locations, allTags: tags, locationMap, tagMap,
+        allLocations: locations, allTags: tags.map(tag => tag.name), locationMap, tagMap,
     }
 }
