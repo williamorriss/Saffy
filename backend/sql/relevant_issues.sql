@@ -5,7 +5,7 @@ WITH filtered AS (
     WHERE (CARDINALITY($6::uuid[]) = 0 OR issue_tags.tag_id = ANY($6::uuid[]))
       AND ($7::uuid IS NULL OR issues.location_id = $7::uuid)
     GROUP BY issues.id
-    HAVING (CARDINALITY($6::uuid[]) = 0 OR COUNT(DISTINCT issue_tags.tag_id) = CARDINALITY($6::uuid[]))
+    HAVING (CARDINALITY($6::uuid[]) = 0 OR COUNT(DISTINCT issue_tags.tag_id) = CARDINALITY($6::uuid[])) -- >1
 ),
      r AS (
          SELECT

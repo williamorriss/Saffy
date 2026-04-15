@@ -80,9 +80,9 @@ export default function NewIssue() {
             body: {
                 title: data.title,
                 description: data.description,
-                locationId: location
+                locationId: location,
+                tagNames: tags.map((tag) => tag.name),
             },
-            query: { tags }
         });
 
         if (!error) {
