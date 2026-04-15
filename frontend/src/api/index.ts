@@ -19,7 +19,7 @@ export type IssueQuery = {
     dateAfter?: string;
     dateBefore?: string;
     ordering?: IssueQueryOrder;
-    tags: Tag[],
+    tags: string[],
 }
 
 

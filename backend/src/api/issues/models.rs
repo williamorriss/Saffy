@@ -40,7 +40,7 @@ impl From<IssueRow> for IssueSchema {
                 None
             };
 
-        let tags: Vec<_> = row.tags.map_or(vec![], |tags| tags.into_iter().map(|tag| TagSchema {name:tag}).collect());
+        let tags: Vec<_> = row.tags.into_iter().map(|tag| TagSchema {name:tag}).collect();
 
         IssueSchema {
             id: row.issue_id,
@@ -80,17 +80,17 @@ pub struct IssueQuery {
     #[param(required = false)]
     pub ordering: IssueQueryOrder,
     #[serde(deserialize_with = "deserialize_tags")]
-    pub tags: Vec<Uuid>,
+    pub tags: Vec<String>,
 }
 
-fn deserialize_tags<'de, D>(deserializer: D) -> Result<Vec<Uuid>, D::Error>
+fn deserialize_tags<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
 where D: Deserializer<'de>
 {
     let s = String::deserialize(deserializer)?;
-    if s.is_empty() { return Ok(vec![]); }
-    s.split(',')
-        .map(|s| s.trim().parse::<Uuid>().map_err(serde::de::Error::custom))
-        .collect()
+    if s.is_empty() {
+        return Ok(vec![]);
+    }
+    Ok(s.split(',').map(String::from).collect())
 }
 
 impl Default for IssueQuery {

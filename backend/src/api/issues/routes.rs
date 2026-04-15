@@ -22,7 +22,7 @@ pub struct IssueRow {
     pub location_url: Option<String>,
     pub location_description: Option<String>,
     // tags
-    pub tags: Option<Vec<String>>,
+    pub tags: Vec<String>,
 }
 
 pub fn routes() -> OpenApiRouter<AppState> {
@@ -50,9 +50,25 @@ async fn post_issue(
     Json(new_issue): Json<CreateIssue>
 ) -> Result<Json<CreateIssueResponse>, AppError> {
     let mut transaction = state.db.begin().await?;
-    let issue: IssueSchema = query_file_as!(
+    let issue: IssueSchema = query_as!(
         IssueRow,
-        "sql/insert_issue.sql",
+        r#"
+        WITH inserted AS (
+        INSERT INTO issues (title, description, location_id)
+            VALUES ($1, $2, $3)
+            RETURNING id, title, description, location_id
+        )
+        SELECT
+           issue_id AS "issue_id!",
+           issue_title,
+           issue_description,
+           location_id,
+           location_name,
+           location_department,
+           location_url,
+           location_description,
+           tags AS "tags!"
+        FROM full_issues"#,
         new_issue.title,
         new_issue.description,
         new_issue.location_id
@@ -99,7 +115,9 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
     Ok(Json(match issue_query.ordering {
         IssueQueryOrder::NewestFirst => query_file_as!(
             IssueRow,
-            "sql/newest_issues.sql",
+            "sql/newest.sql",
+            issue_query.location_id,
+            &issue_query.tags,
             show_open,
             show_closed,
             issue_query.date_before,
@@ -107,21 +125,20 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
         ).fetch_all(&state.db).await,
         IssueQueryOrder::Relevance => query_file_as!(
             IssueRow,
-            "sql/relevant_issues.sql",
-            issue_query.search.to_owned().unwrap_or("".to_string()),
+            "sql/relevant.sql",
+            issue_query.location_id,
+            &issue_query.tags,
             show_open,
             show_closed,
             issue_query.date_before,
             issue_query.date_after,
-            &issue_query.tags,
-            issue_query.location_id
+            issue_query.search.to_owned().unwrap_or("".to_string()),
         ).fetch_all(&state.db).await,
         _ => todo!(),
     }?
         .into_iter()
         .map(IssueSchema::from)
         .collect::<Vec<_>>()))
-
 }
 
 #[utoipa::path(
@@ -137,9 +154,10 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
 )]
 #[axum::debug_handler]
 async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) -> Result<Json<IssueSchema>, AppError> {
-    query_file_as!(
+    query_as!(
         IssueRow,
-        "sql/select_issue.sql",
+        // ! operator used since issue id never null (primary key) and tags never null (return empty list by default)
+        r#"SELECT issue_id AS "issue_id!", issue_title, issue_description, location_id, location_name, location_department, location_url, location_description, tags AS "tags!" FROM full_issues fi WHERE issue_id = $1"#,
         issue_id
     ).fetch_one(&state.db).await
         .map(IssueSchema::from)

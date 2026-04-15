@@ -10,7 +10,8 @@ import useDefaultData from "../../hooks/UseDefaultData.ts";
 const CreateIssueSchema = z.object({
     title: z.string(),
     description: z.string(),
-    location: z.string().nullable(),
+    locationId: z.string().nullish(),
+    tagNames: z.array(z.string()),
 }) satisfies z.ZodType<CreateIssue>;
 
 type CreateIssueForm = z.infer<typeof CreateIssueSchema>;
@@ -19,7 +20,8 @@ type CreateIssueForm = z.infer<typeof CreateIssueSchema>;
 const defaultValues: CreateIssueForm = {
     title: "",
     description: "",
-    location: "",
+    locationId: undefined,
+    tagNames: [],
 };
 
 interface DropDownWrapperProps {
@@ -100,14 +102,9 @@ export default function NewIssue() {
                         <form onSubmit={handleSubmit(submitNewIssue)} className="flex flex-col gap-4 p-4 w-full">
                             <div className="flex flex-row w-full gap-4">
                                 <NewIssueLocationSearch control={control} name="locationType" placeholder="Location" setValue={setLocation} />
-                                <TagSearch 
-                                    onSelect={selectTag}
-                                    options={allTags.filter((tag) => !tags.some((t) => t.name === tag.name))}
-                                />
                             </div>
 
                             <div className="flex flex-col gap-4">
-                                <TagDisplay tags={tags} setTags={setTags} />
                                 <input {...register("title")} placeholder="Subject" className="w-full p-2 rounded bg-white text-black text-xl font-bold"/>
                                 {errors.title && <span style={{ color: 'red' }}>{errors.title.message}</span>}
                                 <textarea {...register("description")} rows={5} placeholder="Description" className="w-full p-2 rounded bg-white text-black"/>

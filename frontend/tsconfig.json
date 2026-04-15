@@ -12,6 +12,6 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
   }
 }
