@@ -57,14 +57,8 @@ pub struct CreateIssue {
     pub title: String,
     pub description: String,
     pub location_id: Option<Uuid>,
+    pub tag_names: Vec<String>, // tag schema not used since we just want tag names
 }
-
-#[derive(Deserialize)]
-pub struct CreateIssueParams {
-    #[serde(default)]
-    pub tags: Vec<String>,
-}
-
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]

@@ -2,26 +2,20 @@ import { useParams } from 'react-router-dom';
 import { type JSX, useState, useEffect } from "react";
 import { client, type Issue, type Report, type CreateReport } from "../../api";
 
-type NewReportType = {
-    id: number,
-    reporter: string,
-    content: string,
-    createdAt: string
-}
 
-function reportPanel(report: NewReportType): JSX.Element {
+function reportPanel(report: Report, index: number): JSX.Element {
     return (
-        <div key = {report.id} className="w-full flex justify-start flex-col border rounded-md p-4 mb-3 bg-white items-start">
+        <div key = {index.toString()} className="w-full flex justify-start flex-col border rounded-md p-4 mb-3 bg-white items-start">
             <div className="flex justify-start items-center">
-                <p className="font-semibold text-black mr-2">{report.reporter}</p>
+                <p className="font-semibold text-black mr-2">{report.description}</p>
                 <p className="text-gray-600">({report.createdAt})</p>
                 <p className="font-semibold text-black">:</p>
             </div>
-            <p className="text-sm text-gray-600"> {report.content} </p>
+            <p className="text-sm text-gray-600"> {report.closedAt} </p>
         </div>
     );
-
 }
+
 
 async function fetchIssue(id: string, setIssue: (issue: Issue) => void) : Promise<void> {
     const {data} = await client.GET("/api/issues/{id}", {
@@ -46,6 +40,7 @@ async function fetchReports(id: string, setReports: (reports: Report[]) => void)
 }
 
 export function IssuePage() {
+    const [reportDescription, setReportDescription] = useState<string|null>(null);
     const [reports, setReports] = useState<Report[]>([]);
     const [issue, setIssue] = useState<Issue>();
     const [message, setMessage] = useState("");
@@ -67,15 +62,25 @@ export function IssuePage() {
         }
     }, []);
 
-    // const submitMessage = async () => {
-    //     // Report endpoint needed
-    //     console.log("Submit message:", message);
-    //     setMessage("");
-    // }
+    const submitReport = async () => {
+        const { data } = await client.POST("/api/issues/{issue_id}/reports", {
+            params: {
+                path: {id: issueID},
+                body: {
+                    description: reportDescription,
+                }
+            }
+        });
+        if (data) {
+            setReports([...reports, data as Report]);
+        }
+    }
+
+
 
     const displayReports = reports.length === 0
         ? <> No reports found.</>
-        : reports.map(report => <> report.id </>);
+        : reports.map(reportPanel);
 
     return (
         <>
@@ -102,6 +107,11 @@ export function IssuePage() {
 
                     {displayReports}
                 </div>
+
+                <form action={submitReport}>
+                    <input type="text" onChange={e => setReportDescription(e.target.value)} value={reportDescription ?? ""}/>
+                    <button type="submit">Submit</button>
+                </form>
             </div>
         </>
     );

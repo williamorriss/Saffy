@@ -8,7 +8,7 @@ use axum::extract::Query;
 use utoipa_axum::router::OpenApiRouter;
 use crate::error::AppError;
 use uuid::Uuid;
-use super::models::{IssueSchema, CreateIssue, IssueQuery, IssueQueryShow, IssueQueryOrder, ReportSchema, CreateIssueResponse, CreateReport, CreateIssueParams};
+use super::models::{IssueSchema, CreateIssue, IssueQuery, IssueQueryShow, IssueQueryOrder, ReportSchema, CreateIssueResponse, CreateReport};
 
 #[derive(Debug, sqlx::FromRow)]
 pub struct IssueRow {
@@ -47,24 +47,9 @@ pub fn routes() -> OpenApiRouter<AppState> {
 async fn post_issue(
     AuthSession(session): AuthSession,
     State(state): State<AppState>,
-    Query(params): Query<CreateIssueParams>,
     Json(new_issue): Json<CreateIssue>
 ) -> Result<Json<CreateIssueResponse>, AppError> {
     let mut transaction = state.db.begin().await?;
-
-    let tags = params.tags;
-    let bad_tag_rows = query!(r#"
-        SELECT name FROM unnest($1::text[]) AS v(name)
-        EXCEPT SELECT name FROM tags
-    "#, &tags[..]).fetch_all(transaction.as_mut()).await?;
-
-    if !bad_tag_rows.is_empty() {
-        let bad_tags = bad_tag_rows
-            .into_iter()
-            .map(|row| row.name.unwrap_or("".to_string()))
-            .collect::<Vec<String>>().join(", ");
-        return Err(AppError::BadRequest(format!("Bad request, did not recognise tags: {bad_tags}")))
-    }
     let issue: IssueSchema = query_file_as!(
         IssueRow,
         "sql/insert_issue.sql",
@@ -78,7 +63,7 @@ async fn post_issue(
         INSERT INTO issue_tags(issue_id, tag_id)
         SELECT $2, id FROM tag_ids
         "#,
-        &tags[..],
+        &new_issue.tag_names[..],
         issue.id
     ).execute(transaction.as_mut()).await?;
 
@@ -193,7 +178,7 @@ async fn post_report(
 
 #[utoipa::path(
     get,
-    path = "/issues/{id}/reports",
+    path = "/api/issues/{id}/reports",
     params(("id" = Uuid, Path, description = "Issue uuid")),
     responses(
         (status = 201, description = "Created new report", body=Vec<ReportSchema>),
