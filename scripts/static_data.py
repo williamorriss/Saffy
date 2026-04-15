@@ -8,19 +8,17 @@ import psycopg2.extensions
 type Connection = psycopg2.extensions.connection
 
 load_dotenv()
-url = "https://search.bath.ac.uk/s/search.json?collection=bath~sp-cms-production-locations&num_ranks=130"
+# url = "https://search.bath.ac.uk/s/search.json?collection=bath~sp-cms-production-locations&num_ranks=130" (original source)
+# def parse_location_source():
+#     locations = data["response"]["resultPacket"]["results"]
 
 def load_locations() -> list[dict[str,str]]:
     with open("locations.json") as locations_json:
-        data = json.load(locations_json)
-    locations = data["response"]["resultPacket"]["results"]
-    return [{"name" : row["listMetadata"]["t"][0], "department" : row["listMetadata"]["X"][0], "description": row["listMetadata"]["L"][0], "url": row["indexUrl"]} for row in locations]
-
+        return json.load(locations_json)
 
 def load_tags() -> list[dict[str, str]]:
     with open("tags.csv", 'r') as tag_file:
         tags = csv.DictReader(tag_file)
-        next(tags) # skip title
         return [tag for tag in tags]
 
 def set_tags_table(db: Connection, tags: list[dict[str,str]]) -> None:
@@ -49,6 +47,7 @@ def main() -> None:
         set_loc_table(db, loaded)
         print(tags)
         set_tags_table(db, tags)
+
 
 if __name__ == "__main__":
     main()
