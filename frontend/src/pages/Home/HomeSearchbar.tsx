@@ -3,7 +3,7 @@ import {type JSX , useState} from "react";
 // set search Params
 import LocationSearch from "../../components/LocationSearch.tsx";
 import { X, Search } from "lucide-react";
-import { TagSelectionBox, TagDisplay } from "../../components/TagFilter.tsx";
+import { TagSelectionBox } from "../../components/TagFilter.tsx";
 
 const defaultQuery: IssueQuery = {
     search: undefined,
@@ -17,7 +17,6 @@ const defaultQuery: IssueQuery = {
 
 export default function HomeSearchbar({setIssues} : {setIssues: (issues: Issue[]) => void}) {
     const [query, setQuery] = useState<IssueQuery>(defaultQuery);
-    const [tagSelectionVisible, setTagSelectionVisible] = useState(false);
 
     const search = async (_: FormData) => {
         setIssues(await fetchIssues(query))
@@ -26,32 +25,17 @@ export default function HomeSearchbar({setIssues} : {setIssues: (issues: Issue[]
     const setTags = (tags: Tag[]) => setQuery({...query, tags})
 
     return (
-        <form className="w-full px-6 p-4" action={search} >
-            <div className="flex items-center gap-3">
-                <div className="w-1/2">
-                    <LocationSearch setLocationID={(locID: string | undefined) => {setQuery({...query, location: locID})}} />
-                </div>
-                <div className="flex-1/4 max-w-md">
-                    <SearchInput query={query} setQuery={setQuery} />
-                    <button type={"submit"}> BUTTON </button>
-                </div>
-
-                <button
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg whitespace-nowrap text-sm font-medium transition-colors"
-                    type = "button"
-                    onClick={() => setTagSelectionVisible(!tagSelectionVisible)}
-                >
-                    Tags
-                </button>
-
+        <form className="w-full px-6 p-4 flex items-center gap-3" action={search} >
+            <div className="w-1/2">
+                <LocationSearch setLocationID={(locID: string | undefined) => {setQuery({...query, location: locID})}} />
+            </div>
+            <div className="w-1/3">
+                <TagSelectionBox setSelected={setTags} />
             </div>
 
-            <TagDisplay tags={query.tags} setTags={setTags} />
-
-            <div>
-                <TagSelectionBox visible={tagSelectionVisible} tags={query.tags} setTags={setTags} />
+            <div className="flex-1/4 max-w-md">
+                <SearchInput query={query} setQuery={setQuery} />
             </div>
-            {query.location}
         </form>
     );
 }

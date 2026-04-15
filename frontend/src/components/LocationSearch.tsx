@@ -1,13 +1,13 @@
 import {useState, useRef, useEffect, type ChangeEvent, type JSX} from 'react';
 import { type Location } from "../api";
 import Fuse from 'fuse.js';
-import { useDefaultData } from "../hooks/UseDefaultData.ts";
+import useDefaultData from "../hooks/UseDefaultData.ts";
 import { Search, X, ExternalLink } from "lucide-react";
+import * as React from "react";
 
 
 export default function LocationSearch( { setLocationID } : { setLocationID : ((locID: string | undefined) => void)}) {
     const { allLocations, locationMap } = useDefaultData();
-    const [ rankedLocations, setRankedLocations ] = useState<Location[]>([]);
     const [ selectedLocation, setSelectedLocation ] = useState<Location|null>(null); // internal tracker of which location is set
     const [search, setSearch] = useState(""); // search term in bar
     const [isOpen, setIsOpen] = useState(false); // whether ui component is being interacted w/ or not
@@ -15,24 +15,11 @@ export default function LocationSearch( { setLocationID } : { setLocationID : ((
 
     const alphabetical = allLocations.sort((a,b) => a.name.localeCompare(b.name));
 
-    useEffect(() => {
-        if (!search) {
-            setRankedLocations(alphabetical);
-            return;
-        }
-
-        const fuse = new Fuse(allLocations, {
-            keys: ["name"],
-            includeScore: true,
-            threshold: 1.0,
-        });
-
-        setRankedLocations(fuse
-            .search(search)
-            .sort((a, b) => (a.score ?? 1) - (b.score ?? 1))
-            .map(result => result.item));
-    }, [allLocations, search]);
-
+    const fuse = new Fuse(allLocations, {
+        keys: ["name"],
+        includeScore: true,
+        threshold: 1.0,
+    });
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -44,6 +31,13 @@ export default function LocationSearch( { setLocationID } : { setLocationID : ((
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    const rankedLocations: Location[] = search === undefined
+        ? alphabetical
+        : fuse
+            .search(search)
+            .sort((a, b) => (a.score ?? 1) - (b.score ?? 1))
+            .map(result => result.item)
 
     const handleSelect = (loc: Location) => {
         setLocationID(loc.id);
@@ -168,8 +162,6 @@ function LocationDropdown({ranked, selected, handleSelect }: {ranked: Location[]
             {unselected.map(location => displayLocation(location, handleSelect))}
         </>
     )
-
-
 }
 
 

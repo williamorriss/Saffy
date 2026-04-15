@@ -5,8 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { use, useEffect, useState } from "react";
 import { client, type Tag, type Location, type CreateIssue } from "../../api";
 import LocationSearch from "../../components/LocationSearch.tsx";
-import { TagSelectionBox, TagSearch, TagDisplay } from "../../components/TagFilter.tsx";
-import { useDefaultData } from "../../hooks/UseDefaultData.ts";
+import useDefaultData from "../../hooks/UseDefaultData.ts";
 
 const CreateIssueSchema = z.object({
     title: z.string(),
