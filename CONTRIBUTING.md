@@ -63,3 +63,4 @@ cd backend && cargo run --bin openapi && cd ../frontend && npm run gen-types
 
 # Deployment
 .env in root, backend, and frontend
+more
