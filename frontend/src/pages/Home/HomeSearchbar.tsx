@@ -40,9 +40,12 @@ export default function HomeSearchbar({setIssues} : {setIssues: (issues: Issue[]
                 <div className="w-1/3">
                     <TagSelectionBox setTags={setTags} />
                 </div>
+                <button onClick={async () => setIssues(await fetchIssues(query))} className="bg-red-600">
+                    Search
+                </button>
                 <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex flex-col items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                    className="flex flex-col items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
                 >
                     <span>Archive Search</span>
                     <ArrowDown className="w-4 h-4" />
@@ -119,9 +122,9 @@ async function fetchIssues(query: IssueQuery) : Promise<Issue[]> {
             query : {
                 search: query.search,
                 show: query.show,
-                location_id: query.location,
-                date_after: query.dateAfter,
-                date_before: query.dateBefore,
+                locationId: query.location,
+                dateAfter: query.dateAfter,
+                dateBefore: query.dateBefore,
                 tags: query.tags,
                 ordering,
             },
