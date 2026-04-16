@@ -1,9 +1,9 @@
 import { useParams } from 'react-router-dom';
 import { type JSX, useState, useEffect } from "react";
-import {client, type Issue, type Report, type CreateReport, type CreateIssue} from "../../api";
-import { useForm, Controller } from "react-hook-form";
+import {client, type Issue, type Report, type CreateReport } from "../../api";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import LocationSearch from "../../components/LocationSearch.tsx";
+// import LocationSearch from "../../components/LocationSearch.tsx";
 import {zodResolver} from "@hookform/resolvers/zod";
 
 const CreateReportSchema = z.object({

@@ -10,7 +10,7 @@ db-down:
 
 .PHONY: db-init
 db-init:
-	docker compose -f docker-compose.db.yml --profile setup run --rm db-init && cd scripts && poetry run python static_data.py
+	docker compose -f docker-compose.db.yml --profile setup run --rm db-init && cd scripts && poetry run python load_dev.py
 
 .PHONY: db-drop
 db-drop:
