@@ -1,10 +1,10 @@
 import {type IssueQuery, type Issue, client, type IssueQueryOrder, type IssueQueryShow} from "../../api";
 import {type JSX, useEffect, useRef, useState} from "react";
 // set search Params
-import LocationSearch from "../../components/LocationSearch.tsx";
+import LocationSearch from "../../components/LocationSearch";
 import { X, Search, ArrowDown } from "lucide-react";
-import { TagSelectionBox } from "../../components/TagFilter.tsx";
-import IssueStatusSelect from "../../components/IssueStatusSelect.tsx";
+import TagSelectionBox from "../../components/TagSelectionBox";
+import IssueStatusSelect from "../../components/IssueStatusSelect";
 import * as React from "react";
 
 const defaultQuery: IssueQuery = {

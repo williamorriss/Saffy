@@ -18,11 +18,11 @@ INNER JOIN LATERAL (
     LIMIT 1
     ) r ON true
 WHERE (fi.location_id = $1::uuid OR $1 IS NULL)
-  AND ($2::text[] IS NULL OR fi.tags && $2::text[])
-  AND (($3::boolean IS TRUE AND r.closed_at IS NULL) OR ($3 IS NULL))
-  AND (($4::boolean IS TRUE AND r.closed_at IS NOT NULL) OR ($4 IS NULL))
-  AND (r.created_at >= $5 OR $5 IS NULL)
-  AND (r.created_at <= $6 OR $6 IS NULL)
+    AND (cardinality($2::text[]) = 0 OR fi.tags && $2::text[])
+    AND ($3 OR r.closed_at IS NOT NULL)   -- if show_open=false, must be closed
+    AND ($4 OR r.closed_at IS NULL)       -- if show_closed=false, must be open
+    AND (r.created_at >= $5 OR $5 IS NULL)
+    AND (r.created_at <= $6 OR $6 IS NULL)
 ORDER BY r.created_at)
 SELECT
     issue_id AS "issue_id!",

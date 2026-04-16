@@ -50,29 +50,12 @@ async fn post_issue(
     Json(new_issue): Json<CreateIssue>
 ) -> Result<Json<CreateIssueResponse>, AppError> {
     let mut transaction = state.db.begin().await?;
-    let issue: IssueSchema = query_as!(
-        IssueRow,
-        r#"
-        WITH inserted AS (
-        INSERT INTO issues (title, description, location_id)
-            VALUES ($1, $2, $3)
-            RETURNING id, title, description, location_id
-        )
-        SELECT
-           issue_id AS "issue_id!",
-           issue_title,
-           issue_description,
-           location_id,
-           location_name,
-           location_department,
-           location_url,
-           location_description,
-           tags AS "tags!"
-        FROM full_issues"#,
+    let issue_id: Uuid = query!(
+        r#"INSERT INTO issues (title, description, location_id) VALUES ($1, $2, $3) RETURNING id"#,
         new_issue.title,
         new_issue.description,
         new_issue.location_id
-    ).fetch_one(transaction.as_mut()).await?.into();
+    ).fetch_one(transaction.as_mut()).await?.id;
 
     query!(r#"
         WITH tag_ids AS (SELECT id FROM tags WHERE name = ANY($1::text[]))
@@ -80,18 +63,25 @@ async fn post_issue(
         SELECT $2, id FROM tag_ids
         "#,
         &new_issue.tag_names[..],
-        issue.id
+        issue_id
     ).execute(transaction.as_mut()).await?;
 
     let report = query_as!(
         ReportSchema,
         r#"INSERT INTO reports (issue_id, reporter_id, description) VALUES ($1, $2, $3) RETURNING id, issue_id, reporter_id, description, created_at, closed_at"#,
-        issue.id,
+        issue_id,
         session.id,
         new_issue.description
     ).fetch_one(transaction.as_mut()).await?;
 
     transaction.commit().await?;
+
+    let issue = query_as!(
+        IssueRow,
+        r#"SELECT issue_id AS "issue_id!", issue_title, issue_description, location_id, location_name, location_department, location_url, location_description, tags AS "tags!" FROM full_issues fi WHERE issue_id = $1"#,
+        issue_id
+    ).fetch_one(&state.db).await.map(IssueSchema::from)?;
+
     Ok(Json(CreateIssueResponse { issue, report}))
 }
 
@@ -106,7 +96,6 @@ async fn post_issue(
 )]
 #[axum::debug_handler]
 async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<IssueSchema>>, AppError> {
-
     let (show_open, show_closed) = match issue_query.show {
         IssueQueryShow::Closed => (false, true),
         IssueQueryShow::Open => (true, false),
@@ -117,7 +106,7 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
             IssueRow,
             "sql/newest.sql",
             issue_query.location_id,
-            &issue_query.tags,
+            &issue_query.tags[..],
             show_open,
             show_closed,
             issue_query.date_before,
@@ -127,7 +116,7 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
             IssueRow,
             "sql/relevant.sql",
             issue_query.location_id,
-            &issue_query.tags,
+            &issue_query.tags[..],
             show_open,
             show_closed,
             issue_query.date_before,
