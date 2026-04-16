@@ -26,9 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return data;
     };
 
-    const login = () => {
-        location.href =`/api/auth/login?redirect=${location.origin}`;
-    };
+    const login = () => location.href =`/api/auth/login?redirect=${location.href}`;
 
     const isLoggedIn = () => session != null;
 

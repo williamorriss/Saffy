@@ -4,7 +4,7 @@ import Fuse from 'fuse.js';
 import {type LucideIcon, Search, X} from "lucide-react";
 import * as React from "react";
 
-export function TagSelectionBox({ setTags }: { setTags: (tags: string[]) => void}): JSX.Element {
+export default function TagSelectionBox({ setTags }: { setTags: (tags: string[]) => void}): JSX.Element {
     const { allTags } = useDefaultData();
     const dropdownRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
