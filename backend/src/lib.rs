@@ -1,12 +1,13 @@
 use std::env::var;
 use sqlx::PgPool;
+use axum::extract::FromRef;
 
 pub mod error;
 pub mod api;
 
 use utoipauto::utoipauto;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromRef)]
 pub struct AppState {
     pub db: PgPool,
     pub config: AppConfig
@@ -18,6 +19,7 @@ pub struct AppConfig {
     pub address: String,
     pub origin: String,
     pub frontend_origin: String,
+    pub jwt_key: String,
 }
 
 impl AppConfig {
@@ -27,18 +29,11 @@ impl AppConfig {
             address: var("ADDRESS")?,
             origin: var("ORIGIN")?,
             frontend_origin: var("FRONTEND_ORIGIN")?,
+            jwt_key: var("JWT_KEY")?,
         })
     }
 }
 
-pub async fn make_db_connection() -> anyhow::Result<PgPool> {
-    let db_url = dotenvy::var("DATABASE_URL")?;
-
-    Ok(sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&db_url)
-        .await?)
-}
 
 #[utoipauto]
 #[derive(utoipa::OpenApi)]
@@ -51,3 +46,12 @@ pub async fn make_db_connection() -> anyhow::Result<PgPool> {
     ),
 )]
 pub struct ApiDoc;
+
+pub async fn make_db_connection() -> anyhow::Result<PgPool> {
+    let db_url = dotenvy::var("DATABASE_URL")?;
+
+    Ok(sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await?)
+}

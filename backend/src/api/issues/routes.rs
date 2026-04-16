@@ -1,6 +1,6 @@
 use axum::extract::{Path, State};
 use axum::Json;
-use sqlx::{query, query_as, query_file_as};
+use sqlx::{query, query_as, query_file_as, PgPool};
 use crate::api::auth::AuthSession;
 use crate::AppState;
 use utoipa_axum::routes;
@@ -43,13 +43,13 @@ pub fn routes() -> OpenApiRouter<AppState> {
         (status = 500, description = "Failed to create new issue")
     ),
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 async fn post_issue(
     AuthSession(session): AuthSession,
-    State(state): State<AppState>,
+    State(db): State<PgPool>,
     Json(new_issue): Json<CreateIssue>
 ) -> Result<Json<CreateIssueResponse>, AppError> {
-    let mut transaction = state.db.begin().await?;
+    let mut transaction = db.begin().await?;
     let issue_id: Uuid = query!(
         r#"INSERT INTO issues (title, description, location_id) VALUES ($1, $2, $3) RETURNING id"#,
         new_issue.title,
@@ -80,7 +80,7 @@ async fn post_issue(
         IssueRow,
         r#"SELECT issue_id AS "issue_id!", issue_title, issue_description, location_id, location_name, location_department, location_url, location_description, tags AS "tags!" FROM full_issues fi WHERE issue_id = $1"#,
         issue_id
-    ).fetch_one(&state.db).await.map(IssueSchema::from)?;
+    ).fetch_one(&db).await.map(IssueSchema::from)?;
 
     Ok(Json(CreateIssueResponse { issue, report}))
 }
@@ -94,8 +94,8 @@ async fn post_issue(
         (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
     ),
 )]
-#[axum::debug_handler]
-async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<AppState>) -> Result<Json<Vec<IssueSchema>>, AppError> {
+#[axum::debug_handler(state = AppState)]
+async fn get_issues(Query(issue_query): Query<IssueQuery>, State(db): State<PgPool>) -> Result<Json<Vec<IssueSchema>>, AppError> {
     let (show_open, show_closed) = match issue_query.show {
         IssueQueryShow::Closed => (false, true),
         IssueQueryShow::Open => (true, false),
@@ -111,7 +111,7 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
             show_closed,
             issue_query.date_before,
             issue_query.date_after
-        ).fetch_all(&state.db).await,
+        ).fetch_all(&db).await,
         IssueQueryOrder::Relevance => query_file_as!(
             IssueRow,
             "sql/relevant.sql",
@@ -122,7 +122,7 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
             issue_query.date_before,
             issue_query.date_after,
             issue_query.search.to_owned().unwrap_or("".to_string()),
-        ).fetch_all(&state.db).await,
+        ).fetch_all(&db).await,
         _ => todo!(),
     }?
         .into_iter()
@@ -141,14 +141,14 @@ async fn get_issues(Query(issue_query): Query<IssueQuery>, State(state): State<A
         (status = INTERNAL_SERVER_ERROR, description = "Could not make new issue")
     ),
 )]
-#[axum::debug_handler]
-async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) -> Result<Json<IssueSchema>, AppError> {
+#[axum::debug_handler(state = AppState)]
+async fn get_issue(Path(issue_id): Path<Uuid>, State(db): State<PgPool>) -> Result<Json<IssueSchema>, AppError> {
     query_as!(
         IssueRow,
         // ! operator used since issue id never null (primary key) and tags never null (return empty list by default)
         r#"SELECT issue_id AS "issue_id!", issue_title, issue_description, location_id, location_name, location_department, location_url, location_description, tags AS "tags!" FROM full_issues fi WHERE issue_id = $1"#,
         issue_id
-    ).fetch_one(&state.db).await
+    ).fetch_one(&db).await
         .map(IssueSchema::from)
         .map(Json)
         .map_err(AppError::from)
@@ -164,10 +164,10 @@ async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) ->
         (status = 500, description = "Failed to create new report")
     ),
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 async fn post_report(
     AuthSession(session): AuthSession,
-    State(state): State<AppState>,
+    State(db): State<PgPool>,
     Path(issue_id): Path<Uuid>,
     Json(new_report): Json<CreateReport>
 ) -> Result<Json<ReportSchema>, AppError> {
@@ -180,7 +180,7 @@ async fn post_report(
         issue_id,
         session.id,
         new_report.description
-    ).fetch_one(&state.db).await
+    ).fetch_one(&db).await
         .map(Json)
         .map_err(AppError::from)
 }
@@ -195,17 +195,17 @@ async fn post_report(
         (status = 500, description = "Failed to create new report")
     ),
 )]
-#[axum::debug_handler]
+#[axum::debug_handler(state = AppState)]
 async fn get_reports(
     AuthSession(_session): AuthSession,
-    State(state): State<AppState>,
+    State(db): State<PgPool>,
     Path(issue_id): Path<Uuid>,
 ) -> Result<Json<Vec<ReportSchema>>, AppError> {
     query_as!(
         ReportSchema,
         r#"SELECT id, issue_id, reporter_id, description, created_at, closed_at FROM reports WHERE issue_id = $1 ORDER BY created_at"#,
         issue_id,
-    ).fetch_all(&state.db).await
+    ).fetch_all(&db).await
         .map(Json)
         .map_err(AppError::from)
 }

@@ -1,7 +1,7 @@
 use axum::extract::State;
 use axum::Json;
 use serde::Serialize;
-use sqlx::query_as;
+use sqlx::{query_as, PgPool};
 use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
@@ -32,11 +32,11 @@ pub fn routes() -> OpenApiRouter<AppState> {
         (status = INTERNAL_SERVER_ERROR, description = "Could not fetch tags")
     ),
 )]
-#[axum::debug_handler]
-pub async fn get_locations(State(state): State<AppState>) -> Result<Json<Vec<LocationSchema>>, AppError> {
+#[axum::debug_handler(state = AppState)]
+pub async fn get_locations(State(db): State<PgPool>) -> Result<Json<Vec<LocationSchema>>, AppError> {
     query_as!(LocationSchema,
         r#"SELECT id, name, description, department, url FROM locations"#
-    ).fetch_all(&state.db).await
+    ).fetch_all(&db).await
         .map(Json)
         .map_err(AppError::from)
 

@@ -1,9 +1,7 @@
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
-use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
 use tower_http::{
     cors::CorsLayer,
-    services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
 use http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE, ACCEPT};
@@ -13,8 +11,12 @@ use backend::{AppConfig, AppState, make_db_connection};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenvy::dotenv().ok();
+    dotenvy::from_filename(".env").ok();
     tracing_subscriber::fmt().with_env_filter(tracing_subscriber::EnvFilter::from_default_env()).init();
+
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
 
     let config = AppConfig::from_env().expect("Failed to parse env");
     let app = make_router(&config).await?;
@@ -35,11 +37,6 @@ async fn make_router(config: &AppConfig) -> anyhow::Result<axum::Router<()>> {
         db: make_db_connection().await?
     };
 
-    let session_store = MemoryStore::default();
-    let session_layer = SessionManagerLayer::new(session_store)
-        .with_secure(true)
-        .with_expiry(Expiry::OnInactivity(time::Duration::seconds(3600)));
-
     let origin = state.config.origin.parse::<http::HeaderValue>()?;
     tracing::debug!("Cors allow origin {:?}", origin);
 
@@ -59,9 +56,6 @@ async fn make_router(config: &AppConfig) -> anyhow::Result<axum::Router<()>> {
     Ok(router
         .layer(TraceLayer::new_for_http())
         .with_state(state)
-        .layer(session_layer)
-        .fallback_service(
-            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")))
         .layer(cors)
         .merge(SwaggerUi::new("/swagger-ui")
             .url("/openapi.json", api)))

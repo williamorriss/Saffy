@@ -5,7 +5,7 @@ use crate::error::AppError::DbError;
 #[derive(Debug)]
 pub enum AppError {
     NotFound(String),
-    Unauthorized(String),
+    Unauthorized,
     Internal(anyhow::Error),
     BadRequest(String),
     DbError(sqlx::Error),
@@ -18,7 +18,7 @@ impl IntoResponse for AppError {
                 tracing::debug!("{} not found", msg);
                 (StatusCode::NOT_FOUND, msg)
             },
-            AppError::Unauthorized(_) => {
+            AppError::Unauthorized => {
                 tracing::trace!("Unauthorized");
                 (StatusCode::UNAUTHORIZED, "Unauthorized".to_string())
             },
@@ -57,12 +57,6 @@ impl std::fmt::Display for AppError {
 impl From<anyhow::Error> for AppError {
     fn from(e: anyhow::Error) -> Self {
         AppError::Internal(e)
-    }
-}
-
-impl From<tower_sessions::session::Error> for AppError {
-    fn from(e: tower_sessions::session::Error) -> Self {
-        AppError::Internal(e.into())
     }
 }
 

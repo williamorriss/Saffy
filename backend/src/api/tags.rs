@@ -1,7 +1,7 @@
 use axum::extract::State;
 use axum::Json;
 use serde::Serialize;
-use sqlx::query_as;
+use sqlx::{query_as, PgPool};
 use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
@@ -27,11 +27,11 @@ pub fn routes() -> OpenApiRouter<AppState> {
         (status = INTERNAL_SERVER_ERROR, description = "Could not fetch tags")
     ),
 )]
-#[axum::debug_handler]
-pub async fn get_tags(State(state): State<AppState>) -> Result<Json<Vec<TagSchema>>, AppError> {
+#[axum::debug_handler(state = AppState)]
+pub async fn get_tags(State(db): State<PgPool>) -> Result<Json<Vec<TagSchema>>, AppError> {
     query_as!(TagSchema,
         r#"SELECT name FROM tags"#
-    ).fetch_all(&state.db).await
+    ).fetch_all(&db).await
         .map(Json)
         .map_err(AppError::from)
 
