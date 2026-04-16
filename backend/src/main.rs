@@ -54,9 +54,9 @@ async fn make_router(config: &AppConfig) -> anyhow::Result<axum::Router<()>> {
         .split_for_parts();
 
     Ok(router
-        .layer(TraceLayer::new_for_http())
+        .merge(SwaggerUi::new("/swagger-ui").url("/openapi.json", api))
         .with_state(state)
+        .layer(TraceLayer::new_for_http())
         .layer(cors)
-        .merge(SwaggerUi::new("/swagger-ui")
-            .url("/openapi.json", api)))
+    )
 }
