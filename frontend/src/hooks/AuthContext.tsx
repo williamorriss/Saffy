@@ -32,12 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const deleteUser = async () => {
         setSession(null);
-        location.href =`/api/auth/delete`;
+        location.href ="/api/auth/delete";
     }
 
     const logout = async () => {
         setSession(null);
-        location.href =`/api/auth/logout`;
+        location.href ="/api/auth/logout";
     }
 
     // Fetch session once on first init
