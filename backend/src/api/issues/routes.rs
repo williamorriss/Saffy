@@ -156,7 +156,7 @@ async fn get_issue(Path(issue_id): Path<Uuid>, State(state): State<AppState>) ->
 
 #[utoipa::path(
     post,
-    path = "/issues/{id}/reports",
+    path = "/api/issues/{id}/reports",
     params(("id" = Uuid, Path, description = "Issue uuid")),
     request_body = CreateReport,
     responses(
@@ -171,6 +171,10 @@ async fn post_report(
     Path(issue_id): Path<Uuid>,
     Json(new_report): Json<CreateReport>
 ) -> Result<Json<ReportSchema>, AppError> {
+    if new_report.description == "" {
+        return Err(AppError::BadRequest("empty description".to_string()));
+    }
+
     query_as!(
         ReportSchema,
         r#"INSERT INTO reports (issue_id, reporter_id, description) VALUES ($1, $2, $3) RETURNING id, issue_id, reporter_id, description, created_at, closed_at"#,

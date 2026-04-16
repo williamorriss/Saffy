@@ -1,6 +1,16 @@
 import { useParams } from 'react-router-dom';
 import { type JSX, useState, useEffect } from "react";
-import { client, type Issue, type Report, type CreateReport } from "../../api";
+import {client, type Issue, type Report, type CreateReport, type CreateIssue} from "../../api";
+import { useForm, Controller } from "react-hook-form";
+import { z } from "zod";
+import LocationSearch from "../../components/LocationSearch.tsx";
+import {zodResolver} from "@hookform/resolvers/zod";
+
+const CreateReportSchema = z.object({
+    description: z.string().min(1),
+}) satisfies z.ZodType<CreateReport>;
+
+type CreateReportForm = z.infer<typeof CreateReportSchema>;
 
 
 function reportPanel(report: Report, index: number): JSX.Element {
@@ -16,11 +26,17 @@ function reportPanel(report: Report, index: number): JSX.Element {
     );
 }
 
+const defaultValues : CreateReportForm = {
+    description: ""
+}
 
-async function fetchIssue(id: string, setIssue: (issue: Issue) => void) : Promise<void> {
+
+
+
+async function fetchIssue(issueID: string, setIssue: (issue: Issue) => void) : Promise<void> {
     const {data} = await client.GET("/api/issues/{id}", {
         params: {
-            path: {id: id}
+            path: {id: issueID}
         }
     })
     if (data) {
@@ -28,10 +44,10 @@ async function fetchIssue(id: string, setIssue: (issue: Issue) => void) : Promis
     }
 }
 
-async function fetchReports(id: string, setReports: (reports: Report[]) => void) : Promise<void> {
+async function fetchReports(issueID: string, setReports: (reports: Report[]) => void) : Promise<void> {
     const {data} = await client.GET("/api/issues/{id}/reports", {
         params: {
-            path: {id: id}
+            path: {id: issueID}
         }
     })
     if (data) {
@@ -40,11 +56,15 @@ async function fetchReports(id: string, setReports: (reports: Report[]) => void)
 }
 
 export function IssuePage() {
-    const [reportDescription, setReportDescription] = useState<string|null>(null);
+    const { issueID } = useParams();
     const [reports, setReports] = useState<Report[]>([]);
     const [issue, setIssue] = useState<Issue>();
-    const [message, setMessage] = useState("");
-    const { issueID } = useParams();
+
+    const { handleSubmit, register, formState: { errors } } = useForm<CreateReportForm>({
+        resolver: zodResolver(CreateReportSchema),
+        defaultValues,
+    });
+
 
     useEffect(() => {
         if (issueID) {
@@ -62,25 +82,19 @@ export function IssuePage() {
         }
     }, []);
 
-    const submitReport = async () => {
-        const { data } = await client.POST("/api/issues/{issue_id}/reports", {
+    const submitReport = async (report: CreateReportForm) => {
+        const { data } = await client.POST("/api/issues/{id}/reports", {
             params: {
-                path: {id: issueID},
-                body: {
-                    description: reportDescription,
-                }
+                path: {id: issueID!},
+            },
+            body: {
+                description: report.description,
             }
         });
         if (data) {
             setReports([...reports, data as Report]);
         }
     }
-
-
-
-    const displayReports = reports.length === 0
-        ? <> No reports found.</>
-        : reports.map(reportPanel);
 
     return (
         <>
@@ -105,13 +119,19 @@ export function IssuePage() {
                         <p className="text-sm text-gray-600 italic opacity-50">{reports.length} found</p>
                     </div>
 
-                    {displayReports}
+                    <form onSubmit={handleSubmit(submitReport)}>
+                        <input {...register("description")} placeholder="Report" className="w-full p-2 rounded bg-white text-black text-xl font-bold"/>
+                        <button type="submit">Submit</button>
+                    </form>
+                    {errors.description && (
+                        <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+                    )}
+
+                    {reports.length === 0
+                        ? <> No reports found.</>
+                        : reports.map(reportPanel)}
                 </div>
 
-                <form action={submitReport}>
-                    <input type="text" onChange={e => setReportDescription(e.target.value)} value={reportDescription ?? ""}/>
-                    <button type="submit">Submit</button>
-                </form>
             </div>
         </>
     );
