@@ -1,0 +1,4 @@
+DATABASE_URL=postgresql://dev:dev@localhost:5433/dev
+PG_USER=dev
+PG_PASSWORD=dev
+PG_DATABASE=dev
