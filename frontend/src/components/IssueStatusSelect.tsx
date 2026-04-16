@@ -1,4 +1,4 @@
-import {useState, useRef, useEffect, type JSX} from 'react';
+import {useState, useRef, useEffect } from 'react';
 import {type IssueQueryShow} from "../api";
 import { RotateCcw } from "lucide-react";
 import * as React from "react";
