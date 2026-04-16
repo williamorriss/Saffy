@@ -171,10 +171,9 @@ async fn post_report(
     Path(issue_id): Path<Uuid>,
     Json(new_report): Json<CreateReport>
 ) -> Result<Json<ReportSchema>, AppError> {
-    if new_report.description == "" {
+    if new_report.description.is_empty() {
         return Err(AppError::BadRequest("empty description".to_string()));
     }
-
     query_as!(
         ReportSchema,
         r#"INSERT INTO reports (issue_id, reporter_id, description) VALUES ($1, $2, $3) RETURNING id, issue_id, reporter_id, description, created_at, closed_at"#,

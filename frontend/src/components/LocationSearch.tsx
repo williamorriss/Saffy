@@ -48,13 +48,16 @@ export default function LocationSearch( { setLocation } : { setLocation: (locati
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const text = event.target.value;
+        setSearch(text); // Always update the UI input
+
         if (locationMap.has(text)) {
             const location: Location = locationMap.get(text)!;
             setLocation(location.id);
-            setSelected(location)
+            setSelected(location);
+        } else {
+            setLocation(undefined);
+            setSelected(null);
         }
-
-        setSearch(text);
     }
 
     const handleClear = (e: React.MouseEvent) => {
