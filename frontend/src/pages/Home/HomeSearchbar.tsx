@@ -125,7 +125,7 @@ async function fetchIssues(query: IssueQuery) : Promise<Issue[]> {
                 locationId: query.location,
                 dateAfter: query.dateAfter,
                 dateBefore: query.dateBefore,
-                tags: query.tags,
+                tags: query.tags.join(','),
                 ordering,
             },
         },
