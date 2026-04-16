@@ -1,4 +1,3 @@
-use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
@@ -10,28 +9,19 @@ use tower_http::{
 use http::header::{AUTHORIZATION, CONTENT_TYPE, COOKIE, ACCEPT};
 use http::Method;
 use utoipa_swagger_ui::SwaggerUi;
+use backend::{AppConfig, AppState, make_db_connection};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
-
     tracing_subscriber::fmt().with_env_filter(tracing_subscriber::EnvFilter::from_default_env()).init();
-    rustls::crypto::aws_lc_rs::default_provider()
-        .install_default()
-        .expect("Failed to initialize TLS certificate");
 
-    let db_pool = make_db_connection().await?;
-    let app = app(&db_pool)?;
-
-    // let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file("cert.pem", "key.pem")
-    //     .await?;
-
-    let address = format!("{}:{}", backend::ADDRESS, backend::PORT).parse::<std::net::SocketAddr>()?;
-
-    println!("Serving on {}", backend::ORIGIN);
-    println!("Documentation at {}/swagger-ui",backend::ORIGIN);
-
-    //axum_server::bind_rustls(address, tls_config)
+    let config = AppConfig::from_env().expect("Failed to parse env");
+    let app = make_router(&config).await?;
+    let address = format!("{}:{}", config.address, config.port)
+        .parse::<std::net::SocketAddr>()?;
+    println!("Serving on {}", config.origin);
+    println!("Documentation at {}/swagger-ui", config.origin);
     axum_server::bind(address)
         .serve(app.into_make_service())
         .await?;
@@ -39,29 +29,25 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn make_db_connection() -> anyhow::Result<PgPool> {
-    let db_url = dotenvy::var("DATABASE_URL")?;
+async fn make_router(config: &AppConfig) -> anyhow::Result<axum::Router<()>> {
+    let state = AppState {
+        config: config.to_owned(),
+        db: make_db_connection().await?
+    };
 
-    Ok(sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&db_url)
-        .await?)
-}
-
-fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(true)
         .with_expiry(Expiry::OnInactivity(time::Duration::seconds(3600)));
 
-    let backend_origin = backend::ORIGIN.parse::<http::HeaderValue>()?;
-    tracing::debug!("Cors allow origin {:?}", backend_origin);
+    let origin = state.config.origin.parse::<http::HeaderValue>()?;
+    tracing::debug!("Cors allow origin {:?}", origin);
 
-    let dev_origin = "http://localhost:5173".parse::<http::HeaderValue>()?;
-    tracing::debug!("Cors allow origin {:?}", dev_origin);
+    let frontend = state.config.frontend_origin.parse::<http::HeaderValue>()?;
+    tracing::debug!("Cors allow origin {:?}", frontend);
 
     let cors = CorsLayer::new()
-        .allow_origin([backend_origin, dev_origin])
+        .allow_origin([origin, frontend])
         .allow_headers([AUTHORIZATION, CONTENT_TYPE, COOKIE, ACCEPT])
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS])
         .allow_credentials(true);
@@ -72,7 +58,7 @@ fn app(db_pool: &PgPool) -> anyhow::Result<axum::Router<()>> {
 
     Ok(router
         .layer(TraceLayer::new_for_http())
-        .with_state(backend::AppState {db: db_pool.clone()})
+        .with_state(state)
         .layer(session_layer)
         .fallback_service(
             ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")))

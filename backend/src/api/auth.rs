@@ -1,4 +1,4 @@
-use crate::{error::AppError, AppState, ORIGIN};
+use crate::{error::AppError, AppConfig, AppState};
 use anyhow::anyhow;
 use axum::{
     extract::{Path, Query, State},
@@ -82,7 +82,7 @@ pub fn routes() -> OpenApiRouter<AppState> {
     )
 )]
 #[axum::debug_handler]
-pub async fn login(Query(query): Query<HashMap<String, String>>) -> Result<Redirect, AppError> {
+pub async fn login(State(state): State<AppState>, Query(query): Query<HashMap<String, String>>) -> Result<Redirect, AppError> {
     let redirect = query.get("redirect")
         .ok_or_else(|| AppError::BadRequest("Malformed redirect Url".to_string()))?;
 
@@ -90,7 +90,7 @@ pub async fn login(Query(query): Query<HashMap<String, String>>) -> Result<Redir
 
     let cas_url = Url::parse_with_params(
         &format!("{CAS_ORIGIN}/login"),
-        &[("service", format!("{ORIGIN}/api/auth/cas/{redirect64}"))],
+        &[("service", format!("{}/api/auth/cas/{}", state.config.origin, redirect64))],
     ).map_err(|e| AppError::Internal(e.into()))?;
 
     Ok(Redirect::to(cas_url.as_str()))
@@ -152,10 +152,10 @@ pub async fn get_session(
 )]
 #[axum::debug_handler]
 pub async fn cas_callback(
+    State(state): State<AppState>,
     Path(redirect64): Path<String>,
     Query(query): Query<HashMap<String, String>>,
     session: TowerSession,
-    State(state): State<AppState>,
 ) -> Result<Redirect, AppError> {
     let redirect = String::from_utf8(
         BASE64_URL_SAFE.decode(&redirect64)
@@ -165,7 +165,7 @@ pub async fn cas_callback(
     let redirect_url = Url::parse(&redirect)
         .map_err(|_| AppError::BadRequest("Invalid URL".to_string()))?;
 
-    let xml = get_cas_response(&redirect64, &query).await?;
+    let xml = get_cas_response(&state.config, &redirect64, &query).await?;
     let username = parse_xml_response(&xml)?;
 
     let id = match get_user_id(&username, &state.db).await {
@@ -223,14 +223,14 @@ fn parse_xml_response(body: &str) -> Result<String, AppError> {
         |res| Ok(res.user))
 }
 
-async fn get_cas_response(redirect64: &str, params: &HashMap<String, String>) -> Result<String, AppError> {
+async fn get_cas_response(config: &AppConfig, redirect64: &str, params: &HashMap<String, String>) -> Result<String, AppError> {
     let ticket = params.get("ticket")
         .ok_or_else(|| AppError::BadRequest("Missing ticket".to_string()))?;
 
     let cas_url = Url::parse_with_params(
         &format!("{CAS_ORIGIN}/serviceValidate"),
         &[
-            ("service", &format!("{ORIGIN}/api/auth/cas/{redirect64}")),
+            ("service", &format!("{}/api/auth/cas/{}", config.origin, redirect64)),
             ("ticket", ticket),
         ],
     )?;
