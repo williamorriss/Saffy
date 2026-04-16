@@ -1,5 +1,5 @@
 import {createContext, useContext, useEffect, useState} from 'react'
-import { client, type User } from "../api";
+import { client, BACKEND_URL, type User } from "../api";
 import * as React from "react";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -32,12 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const deleteUser = async () => {
         setSession(null);
-        location.href =`/api/auth/delete`;
+        location.href =`${BACKEND_URL}/api/auth/delete`;
     }
 
     const logout = async () => {
         setSession(null);
-        location.href =`/api/auth/logout`;
+        location.href =`${BACKEND_URL}/api/auth/logout`;
     }
 
     // Fetch session once on first init
