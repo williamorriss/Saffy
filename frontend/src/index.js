@@ -19,7 +19,7 @@ export default {
                     method: request.method,
                     headers,
                     body: request.body,
-                    redirect: "follow",
+                    redirect: "manual",
                 });
 
                 const response = await fetch(proxyRequest);
