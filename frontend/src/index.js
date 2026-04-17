@@ -1,12 +1,13 @@
 export default {
     async fetch(request, env, _ctx) {
         try {
-            console.log(request);
-            const url = new URL(request.url);
-
-            if (url.pathname.startsWith("/api")) {
+            const apiRequest = request.url.match(".*\/api(.*)");
+            if (apiRequest !== null) {
                 const backend = env.VITE_BACKEND_URL;
-                const targetUrl = new URL(url.pathname + url.search, backend);
+                const apiPath = apiRequest[1];
+                console.log(apiPath);
+                const targetUrl = new URL("/api",apiPath, backend);
+                console.log(targetUrl);
 
                 const proxyRequest = new Request(targetUrl.toString(), request);
                 proxyRequest.headers.set("Host", targetUrl.hostname);
