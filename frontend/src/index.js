@@ -1,19 +1,28 @@
 export default {
     async fetch(request, env, _ctx) {
         try {
-            const apiRequest = request.url.match(/.*\/api(.*)/);
-            if (apiRequest !== null) {
+            const url = new URL(request.url);
+
+            if (url.pathname.startsWith("/api")) {
                 const backend = env.VITE_BACKEND_URL;
                 if (!backend) {
                     return new Response("Backend URL not set", { status: 500 });
                 }
-                const apiPath = apiRequest[1];
-                const targetUrl = new URL("/api" + apiPath, backend);
 
+                const targetUrl = new URL(url.pathname + url.search, backend);
                 const proxyRequest = new Request(targetUrl.toString(), request);
                 proxyRequest.headers.set("Host", targetUrl.hostname);
 
-                return fetch(proxyRequest);
+                const response = await fetch(proxyRequest);
+
+                const newResponse = new Response(response.body, response);
+                const cookies = response.headers.getAll("Set-Cookie");
+                newResponse.headers.delete("Set-Cookie");
+                for (const cookie of cookies) {
+                    const rewritten = cookie.replace(/;\s*Domain=[^;]*/i, "");
+                    newResponse.headers.append("Set-Cookie", rewritten);
+                }
+                return newResponse;
             }
 
             try {
