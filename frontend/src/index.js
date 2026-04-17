@@ -1,9 +1,7 @@
 export default {
     async fetch(request, env, _ctx) {
-        console.log(request);
         try {
             const url = new URL(request.url);
-            console.log(url.pathname)
 
             if (url.pathname.startsWith("/api")) {
                 const backend = env.VITE_BACKEND_URL;
