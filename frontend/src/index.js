@@ -27,7 +27,7 @@ export default {
             }
         } catch (e) {
             console.log(e)
-            return new Response("Server Error", { status: 500 });
+            return new Response(e.toString(), { status: 500 });
         }
     },
 };
