@@ -1,6 +1,7 @@
 export default {
     async fetch(request, env, _ctx) {
         try {
+            console.log(request);
             const url = new URL(request.url);
 
             if (url.pathname.startsWith("/api")) {
@@ -26,7 +27,7 @@ export default {
                 return new Response("Asset not found", {status: 404});
             }
         } catch (e) {
-            console.error(e);
+            console.log(e);
             return new Response(e.toString(), { status: 500 });
         }
     },
