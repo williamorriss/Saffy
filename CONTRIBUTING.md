@@ -60,6 +60,7 @@ cd backend && cargo run --bin openapi && cd ../frontend && npm run gen-types
 
 ## Container Dev
 .... untested
+npx wrangler mtls-certificate upload --cert cert.pem --key key.pem --name app-cert
 
 # Deployment
 .env in root, backend, and frontend

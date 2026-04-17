@@ -288,9 +288,9 @@ async fn get_cas_response(config: &AppConfig, redirect64: &str, params: &HashMap
 fn make_session_cookie<'c, C: Into<Cookie<'c>>>(base: C) -> Cookie<'c> {
     Cookie::build(base)
         .path("/")
-        .same_site(axum_extra::extract::cookie::SameSite::None)
+        .same_site(axum_extra::extract::cookie::SameSite::Lax)
         .http_only(true)
-        .secure(cfg!(not(debug_assertions)))
+        .secure(false) //change later
         .build()
 }
 

@@ -23,6 +23,5 @@ export type IssueQuery = {
 }
 
 
-// export const BACKEND_URL: string = "https://localhost:8000";
 export const client
     = createClient<paths>({ baseUrl: "/", credentials: "include" });
