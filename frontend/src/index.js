@@ -26,6 +26,7 @@ export default {
                 return new Response("Asset not found", {status: 404});
             }
         } catch (e) {
+            console.error(e);
             return new Response(e.toString(), { status: 500 });
         }
     },
