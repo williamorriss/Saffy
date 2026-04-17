@@ -24,6 +24,5 @@ export type IssueQuery = {
 
 
 // export const BACKEND_URL: string = "https://localhost:8000";
-export const BACKEND_URL: string = import.meta.env.VITE_BACKEND_URL;
 export const client
-    = createClient<paths>({ baseUrl: BACKEND_URL, credentials: "include" });
+    = createClient<paths>({ baseUrl: "/", credentials: "include" });
