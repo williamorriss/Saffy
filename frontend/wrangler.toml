@@ -2,6 +2,11 @@ name = "saffy"
 main = "src/index.js"
 compatibility_date = "2024-04-01"
 
+[observability]
+[observability.logs]
+enabled = false
+invocation_logs = true
+
 [assets]
 directory = "./dist"
 binding = "ASSETS"
