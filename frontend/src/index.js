@@ -10,18 +10,33 @@ export default {
                 }
 
                 const targetUrl = new URL(url.pathname + url.search, backend);
-                const proxyRequest = new Request(targetUrl.toString(), request);
-                proxyRequest.headers.set("Host", targetUrl.hostname);
+
+                const headers = new Headers(request.headers);
+                headers.set("Host", targetUrl.hostname);
+                headers.delete("CF-Connecting-IP");
+
+                const proxyRequest = new Request(targetUrl.toString(), {
+                    method: request.method,
+                    headers,
+                    body: request.body,
+                    redirect: "follow",
+                });
 
                 const response = await fetch(proxyRequest);
 
                 const newResponse = new Response(response.body, response);
                 const cookies = response.headers.getAll("Set-Cookie");
                 newResponse.headers.delete("Set-Cookie");
+
                 for (const cookie of cookies) {
-                    const rewritten = cookie.replace(/;\s*Domain=[^;]*/i, "");
+                    const rewritten = cookie
+                            .replace(/;\s*Domain=[^;]*/i, "")
+                            .replace(/;\s*SameSite=[^;]*/i, "")
+                            .replace(/;\s*Secure/i, "")
+                        + "; SameSite=Lax";
                     newResponse.headers.append("Set-Cookie", rewritten);
                 }
+
                 return newResponse;
             }
 
