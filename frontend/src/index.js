@@ -4,6 +4,9 @@ export default {
             const apiRequest = request.url.match(/.*\/api(.*)/);
             if (apiRequest !== null) {
                 const backend = env.VITE_BACKEND_URL;
+                if (!backend) {
+                    return new Response("Backend URL not set", { status: 500 });
+                }
                 const apiPath = apiRequest[1];
                 const targetUrl = new URL("/api" + apiPath, backend);
 
