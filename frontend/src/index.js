@@ -15,7 +15,7 @@ export default {
                 // api call
                 const response = await fetch(targetUrl.toString(), {
                     method: request.method,
-                    headers,
+                    headers: request.headers,
                     body: request.body,
                     redirect: "manual",
                 });
