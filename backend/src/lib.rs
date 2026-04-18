@@ -18,7 +18,6 @@ pub struct AppConfig {
     pub port: u16,
     pub address: String,
     pub origin: String,
-    pub frontend_origin: String,
     pub jwt_key: String,
 }
 
@@ -28,7 +27,6 @@ impl AppConfig {
             port: var("PORT")?.parse::<u16>()?,
             address: var("ADDRESS")?,
             origin: var("ORIGIN")?,
-            frontend_origin: var("FRONTEND_ORIGIN")?,
             jwt_key: var("JWT_KEY")?,
         })
     }
@@ -39,9 +37,9 @@ impl AppConfig {
 #[derive(utoipa::OpenApi)]
 #[openapi(
     info(
-        title = "knowle",
+        title = "Saffy",
         version = "-0.3.6",
-        description = "knowle dev api",
+        description = "saffy dev api",
         contact(name = "will", email = "wvam20@bath.ac.uk"),
     ),
 )]

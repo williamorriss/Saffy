@@ -18,6 +18,7 @@ export default {
                     headers: request.headers,
                     body: request.body,
                     redirect: "manual",
+
                 });
 
                 console.log("status:", response.status, "cookie:", response.headers.get("Set-Cookie"));
@@ -32,9 +33,9 @@ export default {
                 const cookie = response.headers.get("Set-Cookie");
                 console.log("original cookie", cookie);
                 if (cookie) {
-                    const rewritten = cookie
-                            .replace(/Domain=[^;]+;?\s*/i, "")
-                        + `; Domain=${url.hostname}; Secure; SameSite=Lax`;
+                    const rewritten = /Domain=/i.test(cookie)
+                        ? cookie.replace(/Domain=[^;]+/i, `Domain=${url.hostname}`)
+                        : cookie + `; Domain=${url.hostname}`;
                     newResponse.headers.set("Set-Cookie", rewritten);
                     console.log("rewritten cookie", rewritten);
                 }
