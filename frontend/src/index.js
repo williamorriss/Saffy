@@ -10,31 +10,40 @@ export default {
                 }
 
                 const targetUrl = new URL(url.pathname + url.search, backend);
+                const backendHost = new URL(backend).host;
 
                 const headers = new Headers(request.headers);
                 headers.set("Host", targetUrl.hostname);
                 headers.delete("CF-Connecting-IP");
 
-                const proxyRequest = new Request(targetUrl.toString(), {
+                const response = await fetch(targetUrl.toString(), {
                     method: request.method,
                     headers,
                     body: request.body,
                     redirect: "manual",
                 });
 
-                const response = await fetch(proxyRequest);
+                const newResponse = new Response(response.body, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: new Headers(response.headers),
+                });
 
-                const newResponse = new Response(response.body, response);
-                const cookies = response.headers.getAll("Set-Cookie");
-                newResponse.headers.delete("Set-Cookie");
-
-                for (const cookie of cookies) {
-                    const rewritten = cookie
-                            .replace(/;\s*Domain=[^;]*/i, "")
-                            .replace(/;\s*SameSite=[^;]*/i, "")
-                            .replace(/;\s*Secure/i, "")
-                        + "; SameSite=Lax";
-                    newResponse.headers.append("Set-Cookie", rewritten);
+                // Only rewrite Location if it points to backend — not external URLs (e.g. CAS)
+                if (response.status >= 300 && response.status < 400) {
+                    const location = response.headers.get("Location");
+                    if (location) {
+                        try {
+                            const loc = new URL(location);
+                            if (loc.host === backendHost) {
+                                loc.host = url.host;
+                                loc.protocol = url.protocol;
+                                newResponse.headers.set("Location", loc.toString());
+                            }
+                        } catch {
+                            // Relative URL - fine as-is
+                        }
+                    }
                 }
 
                 return newResponse;
@@ -42,17 +51,11 @@ export default {
 
             try {
                 const response = await env.ASSETS.fetch(request);
-
                 if (response.status === 404) {
-                    const indexRequest = new Request(
-                        new URL("/index.html", request.url).toString(),
-                        request
-                    );
-                    return await env.ASSETS.fetch(indexRequest);
+                    return await env.ASSETS.fetch(new Request(new URL("/index.html", request.url).toString(), request));
                 }
-
                 return response;
-            } catch (e) {
+            } catch {
                 return new Response("Asset not found", { status: 404 });
             }
         } catch (e) {
