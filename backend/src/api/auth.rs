@@ -290,7 +290,7 @@ fn make_session_cookie<'c, C: Into<Cookie<'c>>>(base: C) -> Cookie<'c> {
         .path("/")
         .same_site(axum_extra::extract::cookie::SameSite::Lax)
         .http_only(true)
-        .secure(false) //change later
+        .secure(true)
         .build()
 }
 
