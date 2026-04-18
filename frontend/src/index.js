@@ -12,10 +12,7 @@ export default {
                 const targetUrl = new URL(url.pathname + url.search, backend);
                 const backendHost = new URL(backend).host;
 
-                const headers = new Headers(request.headers);
-                headers.set("Host", targetUrl.hostname);
-                headers.delete("CF-Connecting-IP");
-
+                // api call
                 const response = await fetch(targetUrl.toString(), {
                     method: request.method,
                     headers,
@@ -29,21 +26,15 @@ export default {
                     headers: new Headers(response.headers),
                 });
 
-                // Only rewrite Location if it points to backend — not external URLs (e.g. CAS)
-                if (response.status >= 300 && response.status < 400) {
-                    const location = response.headers.get("Location");
-                    if (location) {
-                        try {
-                            const loc = new URL(location);
-                            if (loc.host === backendHost) {
-                                loc.host = url.host;
-                                loc.protocol = url.protocol;
-                                newResponse.headers.set("Location", loc.toString());
-                            }
-                        } catch {
-                            // Relative URL - fine as-is
-                        }
-                    }
+                // Cookie being sent for backend url but using reverse proxy to call backend
+                const cookie = response.headers.get("Set-Cookie");
+                console.log("original cookie", cookie);
+                if (cookie) {
+                    const rewritten = cookie
+                            .replace(/Domain=[^;]+;?\s*/i, "")
+                        + `; Domain=${url.hostname}; Secure; SameSite=Lax`;
+                    newResponse.headers.set("Set-Cookie", rewritten);
+                    console.log("rewritten cookie", rewritten);
                 }
 
                 return newResponse;
