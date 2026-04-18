@@ -20,6 +20,8 @@ export default {
                     redirect: "manual",
                 });
 
+                console.log("status:", response.status, "cookie:", response.headers.get("Set-Cookie"));
+
                 const newResponse = new Response(response.body, {
                     status: response.status,
                     statusText: response.statusText,
